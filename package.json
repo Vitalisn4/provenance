@@ -1,0 +1,31 @@
+{
+  "name": "provenance",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Supplier-verification agents that turn their proven judgments into Zetaris data-quality rules. Open Agent Hackathon 2026, Track 1.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "typecheck": "tsc",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "conformance:hmem": "HMEM_IMPL=app/engines/hmem/src/index.ts tsx tests/conformance/hmem/runner.ts",
+    "conformance:world-model": "WORLD_MODEL_IMPL=app/engines/world-model/src/index.ts tsx tests/conformance/world-model/runner.ts",
+    "conformance": "npm run conformance:hmem && npm run conformance:world-model",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run conformance"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^20.19.43",
+    "eslint": "^10.13.0",
+    "prettier": "^3.9.10",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.0",
+    "vitest": "^4.1.12"
+  }
+}
