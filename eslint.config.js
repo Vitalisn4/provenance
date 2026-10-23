@@ -1,12 +1,15 @@
 import js from "@eslint/js";
+import { defineConfig, globalIgnores } from "eslint/config";
 import tseslint from "typescript-eslint";
 
-export default tseslint.config(
-  { ignores: ["app/engines/**", "tests/conformance/**"] },
+export default defineConfig(
+  globalIgnores(["app/engines/", "tests/conformance/"]),
   js.configs.recommended,
-  ...tseslint.configs.strict,
+  tseslint.configs.strictTypeChecked,
   {
+    languageOptions: { parserOptions: { projectService: true } },
     rules: {
+      "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
       "no-restricted-properties": [
         "error",
         { object: "process", property: "env", message: "Read configuration through app/config/env.ts only." },
@@ -16,5 +19,10 @@ export default tseslint.config(
   {
     files: ["app/config/env.ts"],
     rules: { "no-restricted-properties": "off" },
+  },
+  // This file is outside the TypeScript project, so type-aware rules cannot run on it.
+  {
+    files: ["eslint.config.js"],
+    extends: [tseslint.configs.disableTypeChecked],
   },
 );

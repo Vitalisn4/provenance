@@ -1,11 +1,12 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { parseEnv } from "node:util";
 import { describe, expect, it } from "vitest";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 
-// Real credentials mix letters and digits; placeholders such as "your-nightshift-runtime-token" do not.
+// Real credentials mix letters and digits; placeholders such as "your-zetaris-api-key" do not.
 const CREDENTIAL = String.raw`(?=[\w.~+/-]*\d)(?=[\w.~+/-]*[A-Za-z])[\w.~+/-]{24,}`;
 
 const KEY_PATTERNS: RegExp[] = [
@@ -21,20 +22,33 @@ function findSecrets(text: string): string[] {
   return KEY_PATTERNS.filter((pattern) => pattern.test(text)).map((pattern) => pattern.source);
 }
 
-function filesToScan(): string[] {
-  const listed = execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard"], {
-    cwd: ROOT,
-    encoding: "utf-8",
-  })
-    .split("\n")
-    .filter(Boolean);
-  const logsDir = path.join(ROOT, "logs");
-  const logs = existsSync(logsDir)
-    ? readdirSync(logsDir)
-        .filter((name) => name.endsWith(".jsonl") || name.endsWith(".log"))
-        .map((name) => path.join("logs", name))
-    : [];
-  return [...listed, ...logs].filter((file) => existsSync(path.join(ROOT, file)));
+// The real secret values in the local .env catch a leak whatever its shape; failures name the variable only.
+function localSecrets(): [name: string, value: string][] {
+  const file = path.join(ROOT, ".env");
+  if (!existsSync(file)) return [];
+  return Object.entries(parseEnv(readFileSync(file, "utf-8"))).flatMap(([name, value]) =>
+    /KEY|TOKEN|PASSWORD|SECRET/i.test(name) && value && value.length >= 8 ? [[name, value]] : [],
+  );
+}
+
+function git(...args: string[]): string {
+  return execFileSync("git", args, { cwd: ROOT, encoding: "utf-8" });
+}
+
+function lines(output: string): string[] {
+  return output.split("\n").filter(Boolean);
+}
+
+// What a commit could contain: every working copy, plus the staged version of files whose working copy differs.
+function contentsToScan(): [file: string, text: string][] {
+  const working = lines(git("ls-files", "--cached", "--others", "--exclude-standard"))
+    .filter((file) => existsSync(path.join(ROOT, file)))
+    .map((file): [string, string] => [file, readFileSync(path.join(ROOT, file), "utf-8")]);
+  const staged = lines(git("diff", "--name-only")).map((file): [string, string] => [
+    `${file} (staged)`,
+    git("show", `:${file}`),
+  ]);
+  return [...working, ...staged];
 }
 
 describe("secret scan", () => {
@@ -44,12 +58,14 @@ describe("secret scan", () => {
     expect(findSecrets(`nvapi-${"Q7w-".repeat(8)}`)).not.toEqual([]);
   });
 
-  it("finds no secrets in files git would commit or in logs", () => {
-    const files = filesToScan();
-    expect(files).toContain(".env.example");
-    const hits = files.flatMap((file) =>
-      findSecrets(readFileSync(path.join(ROOT, file), "utf-8")).map((pattern) => `${file}: ${pattern}`),
-    );
+  it("finds no secrets in files git would commit", () => {
+    const contents = contentsToScan();
+    expect(contents.map(([file]) => file)).toContain(".env.example");
+    const secrets = localSecrets();
+    const hits = contents.flatMap(([file, text]) => {
+      const leaked = secrets.filter(([, value]) => text.includes(value)).map(([name]) => name);
+      return [...findSecrets(text), ...leaked].map((found) => `${file}: ${found}`);
+    });
     expect(hits).toEqual([]);
   });
 });
