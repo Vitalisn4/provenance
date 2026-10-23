@@ -25,13 +25,18 @@ interface VendorRow {
 const read = (path: string) => readFileSync(new URL(`../../data/${path}`, import.meta.url), "utf8");
 const key = JSON.parse(read("answer-key.json")) as AnswerKey;
 
+const sqlValue = String.raw`'((?:[^']|'')*)'|NULL`;
+const sqlTuple = new RegExp(String.raw`^(?:${sqlValue})(?:, (?:${sqlValue}))*$`);
+
 function vendorRows(sql: string): VendorRow[] {
   return [...sql.matchAll(/^\s*\((.*)\)[,;]$/gm)].map(([, tuple = ""]) => {
-    const values = [...tuple.matchAll(/'((?:[^']|'')*)'|NULL/g)].map(([literal, text]) =>
+    const values = [...tuple.matchAll(new RegExp(sqlValue, "g"))].map(([literal, text]) =>
       literal === "NULL" ? null : (text ?? "").replaceAll("''", "'"),
     );
     const [id, name, country, lei, cik, sic] = values;
-    if (values.length !== 6 || !id || !name || !country) throw new Error(`Malformed row: ${tuple}`);
+    if (!sqlTuple.test(tuple) || values.length !== 6 || !id || !name || !country) {
+      throw new Error(`Malformed row: ${tuple}`);
+    }
     return { id, name, country, lei: lei ?? null, cik: cik ?? null, sic: sic ?? null };
   });
 }
@@ -122,11 +127,17 @@ describe("ERP dataset and answer key", () => {
 });
 
 describe("vendorRows", () => {
-  it("reads quoted text, doubled quotes and NULL, and refuses a short row", () => {
+  it("reads quoted text, doubled quotes and NULL, and refuses rows Postgres would refuse", () => {
     expect(vendorRows("    ('V-1', 'O''Brien, Ltd', 'IE', NULL, '1', '1234'),")).toEqual([
       { id: "V-1", name: "O'Brien, Ltd", country: "IE", lei: null, cik: "1", sic: "1234" },
     ]);
-    expect(() => vendorRows("    ('V-1', 'O''Brien, Ltd', 'IE', NULL, NULL);")).toThrow("Malformed row");
+    for (const row of [
+      "('V-1', 'O''Brien, Ltd', 'IE', NULL, NULL);",
+      "('V-1', 'O''Brien, Ltd', 'IE', NULL, '1', '1234',);",
+      "('V-1', 'O''Brien, Ltd', 'IE', NULL, '1' '1234');",
+    ]) {
+      expect(() => vendorRows(row), row).toThrow("Malformed row");
+    }
   });
 });
 

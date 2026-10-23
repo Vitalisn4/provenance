@@ -154,19 +154,8 @@
     "V-1029": { "batch": "held_out", "decision": "ready", "issues": [] },
     "V-1030": {
       "batch": "learning",
-      "decision": "escalate",
-      "issues": [
-        {
-          "pattern": "ambiguous_identity",
-          "candidates": [
-            "529900RYOYI5K0BZO684",
-            "529900W9BQ7G4X848C27",
-            "52990031PBPHFVEKU262",
-            "529900FHCMSHKZOZJ162",
-            "5299003R1SPPRIFHWM57"
-          ]
-        }
-      ]
+      "decision": "fix",
+      "issues": [{ "pattern": "blank_field", "field": "lei", "correct": "5299005DX33HEK6IQS04" }]
     },
     "V-1031": {
       "batch": "held_out",
