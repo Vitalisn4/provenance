@@ -58,11 +58,11 @@ describe("Zetaris client", () => {
   });
 
   it("gives up on a read after the retry limit", async () => {
-    const outages = Array.from({ length: policy.zetaris.maxRetries + 1 }, () => reply(503, { msg: "busy" }));
+    const outages = Array.from({ length: policy.zetaris.maxRetries + 1 }, () => reply(503, {}));
     const { zetaris, fetch } = client(...outages);
 
     const error = await failure(zetaris.query("SELECT 1"));
-    expect(error.recoverable).toBe(true);
+    expect(error).toMatchObject({ message: "Zetaris: HTTP 503", recoverable: true });
     expect(fetch).toHaveBeenCalledTimes(policy.zetaris.maxRetries + 1);
   });
 

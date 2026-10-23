@@ -5,16 +5,15 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { splitStatements } from "../adapters/sqlScript.ts";
 import { createZetarisClient } from "../adapters/zetaris.ts";
-import { env } from "../config/env.ts";
+import { setupValues, zetarisConfig } from "../config/env.ts";
 import { AppError } from "../domain/errors.ts";
 import { runCli } from "./runCli.ts";
 
 const SETUP_DIR = path.join("zetaris", "setup");
 
 await runCli(async () => {
-  const config = env();
-  const zetaris = createZetarisClient(config.zetaris);
-  const values = { SEC_USER_AGENT: config.secUserAgent, ERP_DB_PASSWORD: config.erpDbPassword };
+  const zetaris = createZetarisClient(zetarisConfig());
+  const values = setupValues();
   const files = readdirSync(SETUP_DIR)
     .filter((name) => name.endsWith(".sql"))
     .sort();
