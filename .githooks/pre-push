@@ -1,0 +1,6 @@
+#!/bin/sh
+# Blocks a push unless the full check passes and no secret appears anywhere in the history.
+# Enable once per clone: git config core.hooksPath .githooks
+set -e
+npm run check
+docker run --rm -v "$PWD:/repo:ro" zricethezav/gitleaks:v8.30.1 git /repo --no-banner --redact
