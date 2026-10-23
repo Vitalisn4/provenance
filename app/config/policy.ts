@@ -10,4 +10,9 @@ export const policy = {
     // so a result that reaches it is treated as an error.
     resultLimit: 10_000,
   },
+  decision: {
+    // Day 4 check-in deck: the Judge scores each verdict 0-3 on accuracy, appropriateness and actionability,
+    // and a verdict below 7 of 9 goes to the analyst.
+    minJudgeScore: 7,
+  },
 } as const;
