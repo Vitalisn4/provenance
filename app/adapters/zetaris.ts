@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { setTimeout as sleep } from "node:timers/promises";
 import { policy } from "../config/policy.ts";
 import type { ZetarisConfig } from "../config/env.ts";
 import { AppError } from "../domain/errors.ts";
+import { defaultDependencies, requestJson, withRetries, type Dependencies } from "./http.ts";
 
 interface QueryResult {
   columns: string[];
@@ -16,15 +16,11 @@ interface ZetarisClient {
   execute(sql: string): Promise<QueryResult>;
 }
 
-interface Dependencies {
-  fetch: typeof fetch;
-  sleep: (ms: number) => Promise<void>;
-}
-
 async function send(config: ZetarisConfig, sql: string, deps: Dependencies): Promise<QueryResult> {
-  let response: Response;
-  try {
-    response = await deps.fetch(`${config.restUrl}/sql-editor/sqls/run`, {
+  const { status, ok, body } = await requestJson(
+    { type: "zetaris", name: "Zetaris", baseUrl: config.restUrl },
+    "/sql-editor/sqls/run",
+    {
       method: "POST",
       headers: {
         Authorization: `Bearer ${config.apiKey}`,
@@ -38,23 +34,16 @@ async function send(config: ZetarisConfig, sql: string, deps: Dependencies): Pro
         source: "SqlEditor",
         limit: policy.zetaris.resultLimit,
       }),
-      signal: AbortSignal.timeout(policy.zetaris.timeoutMs),
-    });
-  } catch (cause) {
-    const message =
-      cause instanceof Error && cause.name === "TimeoutError"
-        ? `Zetaris did not answer within ${policy.zetaris.timeoutMs / 1000} s`
-        : `Zetaris is unreachable at ${config.restUrl}`;
-    throw new AppError("zetaris", message, true, { cause });
-  }
+    },
+    policy.zetaris.timeoutMs,
+    deps,
+  );
 
-  const body: unknown = await response.json().catch(() => undefined);
-  if (!response.ok) {
-    if (response.status === 401) throw new AppError("zetaris", "Zetaris rejected the API key (401)", false);
+  if (!ok) {
+    if (status === 401) throw new AppError("zetaris", "Zetaris rejected the API key (401)", false);
     const message = (body as { msg?: unknown } | undefined)?.msg;
-    const detail =
-      typeof message === "string" ? (message.split("\n", 1)[0] ?? "") : `HTTP ${response.status}`;
-    throw new AppError("zetaris", `Zetaris: ${detail}`, response.status >= 500);
+    const detail = typeof message === "string" ? (message.split("\n", 1)[0] ?? "") : `HTTP ${status}`;
+    throw new AppError("zetaris", `Zetaris: ${detail}`, status >= 500);
   }
 
   const { headers, data } = (body ?? {}) as { headers?: unknown; data?: unknown };
@@ -70,19 +59,17 @@ async function send(config: ZetarisConfig, sql: string, deps: Dependencies): Pro
 
 export function createZetarisClient(
   config: ZetarisConfig,
-  deps: Dependencies = { fetch, sleep },
+  deps: Dependencies = defaultDependencies,
 ): ZetarisClient {
-  async function run(sql: string, maxRetries: number): Promise<QueryResult> {
+  function run(sql: string, maxRetries: number): Promise<QueryResult> {
     // Zetaris runs one statement per call and rejects a trailing semicolon.
     const statement = sql.trim().replace(/;+$/, "").trim();
-    for (let attempt = 0; ; attempt++) {
-      try {
-        return await send(config, statement, deps);
-      } catch (error) {
-        if (!(error instanceof AppError) || !error.recoverable || attempt >= maxRetries) throw error;
-        await deps.sleep(policy.zetaris.retryBaseDelayMs * 2 ** attempt);
-      }
-    }
+    return withRetries(
+      () => send(config, statement, deps),
+      maxRetries,
+      policy.zetaris.retryBaseDelayMs,
+      deps,
+    );
   }
 
   return {

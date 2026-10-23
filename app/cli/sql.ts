@@ -1,6 +1,6 @@
 // Runs one Lightning SQL statement and prints the result as tab-separated text.
 import { createZetarisClient } from "../adapters/zetaris.ts";
-import { env } from "../config/env.ts";
+import { zetarisConfig } from "../config/env.ts";
 import { runCli } from "./runCli.ts";
 
 await runCli(async (args) => {
@@ -11,6 +11,6 @@ await runCli(async (args) => {
     process.exitCode = 2;
     return;
   }
-  const { columns, rows } = await createZetarisClient(env().zetaris).execute(statement);
+  const { columns, rows } = await createZetarisClient(zetarisConfig()).execute(statement);
   console.log([columns, ...rows].map((row) => row.map((value) => value ?? "NULL").join("\t")).join("\n"));
 });

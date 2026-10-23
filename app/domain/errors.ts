@@ -1,4 +1,4 @@
-type ErrorType = "config" | "zetaris";
+export type ErrorType = "config" | "zetaris" | "meterless";
 
 export class AppError extends Error {
   constructor(
