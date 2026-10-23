@@ -28,12 +28,13 @@ function required(source: Source, name: string): string {
 }
 
 // URLs appear in error messages, so one carrying credentials, a query or a fragment (where a connect link
-// puts its token) is refused rather than echoed.
+// puts its token) is refused rather than echoed. The delimiters are checked in the text itself, since URL
+// reports an empty "?" or "#" as no query or fragment, yet a path appended after one would not be sent.
 function isPlainHttpUrl(value: string): boolean {
   try {
     const url = new URL(value);
     return (
-      ["http:", "https:"].includes(url.protocol) && !url.username && !url.password && !url.search && !url.hash
+      ["http:", "https:"].includes(url.protocol) && !url.username && !url.password && !/[?#]/.test(value)
     );
   } catch {
     return false;

@@ -30,6 +30,8 @@ describe("settings", () => {
       "http://secret@localhost:8888",
       "http://:secret@localhost:8888",
       "http://localhost:8888?token=x",
+      "http://localhost:8888/?",
+      "http://localhost:8888/#",
     ]) {
       expect(() => zetarisConfig({ ...zetaris, ZETARIS_REST_URL: url })).toThrow(
         "ZETARIS_REST_URL must be a plain http(s) URL",
