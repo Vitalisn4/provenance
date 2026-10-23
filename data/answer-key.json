@@ -1,0 +1,179 @@
+{
+  "about": "Hand-labelled answer key for data/erp/01_vendor_master.sql. LEIs, legal names and registration statuses were checked against GLEIF, CIKs and SIC codes against SEC EDGAR, on 23 Oct 2026. The batches were fixed before any rule existed: rules are learned from the learning batch only and scored on the held-out batch.",
+  "patterns": {
+    "sic_not_in_registry": {
+      "origin": "real",
+      "learnable": true,
+      "description": "EDGAR files the company under an SIC code that the company_dns list of 1,005 codes does not contain: an industry-group code such as 3570 or 2840, or an SEC-only code such as 3576."
+    },
+    "lei_of_other_entity": {
+      "origin": "seeded",
+      "learnable": true,
+      "description": "The claimed LEI belongs to a same-name entity registered in another country."
+    },
+    "lei_lapsed": {
+      "origin": "real",
+      "learnable": true,
+      "description": "The claimed LEI is the supplier's own, but its GLEIF registration has lapsed."
+    },
+    "name_not_legal_name": {
+      "origin": "seeded",
+      "learnable": true,
+      "description": "The ERP name is a trading name, a former name or a typo of the registered legal name."
+    },
+    "no_registry_coverage": {
+      "origin": "synthetic",
+      "learnable": true,
+      "description": "A fictional small supplier from a country with little registry coverage: no registry can confirm it, so documents are requested and the supplier is not penalised."
+    },
+    "blank_field": {
+      "origin": "seeded",
+      "learnable": false,
+      "description": "The ERP field is blank and a registry supplies the value."
+    },
+    "ambiguous_identity": {
+      "origin": "real",
+      "learnable": false,
+      "description": "The name and country match more than one registered legal entity, listed as candidate LEIs, so no single entity can be chosen."
+    }
+  },
+  "suppliers": {
+    "V-1001": {
+      "batch": "learning",
+      "decision": "escalate",
+      "issues": [
+        { "pattern": "sic_not_in_registry", "field": "sic" },
+        { "pattern": "blank_field", "field": "lei", "correct": "VGRQXHF3J8VDLUA7XE92" }
+      ]
+    },
+    "V-1002": {
+      "batch": "learning",
+      "decision": "fix",
+      "issues": [{ "pattern": "lei_of_other_entity", "field": "lei", "correct": "W38RGI023J3WT1HWRP32" }]
+    },
+    "V-1003": { "batch": "held_out", "decision": "ready", "issues": [] },
+    "V-1004": {
+      "batch": "learning",
+      "decision": "escalate",
+      "issues": [{ "pattern": "sic_not_in_registry", "field": "sic" }]
+    },
+    "V-1005": {
+      "batch": "learning",
+      "decision": "escalate",
+      "issues": [{ "pattern": "sic_not_in_registry", "field": "sic" }]
+    },
+    "V-1006": {
+      "batch": "held_out",
+      "decision": "escalate",
+      "issues": [{ "pattern": "sic_not_in_registry", "field": "sic" }]
+    },
+    "V-1007": {
+      "batch": "held_out",
+      "decision": "escalate",
+      "issues": [{ "pattern": "sic_not_in_registry", "field": "sic" }]
+    },
+    "V-1008": {
+      "batch": "learning",
+      "decision": "fix",
+      "issues": [{ "pattern": "lei_of_other_entity", "field": "lei", "correct": "1Z4GXXU7ZHVWFCD8TV52" }]
+    },
+    "V-1009": {
+      "batch": "learning",
+      "decision": "fix",
+      "issues": [{ "pattern": "lei_of_other_entity", "field": "lei", "correct": "KNX4USFCNGPY45LOCE31" }]
+    },
+    "V-1010": {
+      "batch": "held_out",
+      "decision": "fix",
+      "issues": [{ "pattern": "lei_of_other_entity", "field": "lei", "correct": "20S05OYHG0MQM4VUIC57" }]
+    },
+    "V-1011": {
+      "batch": "held_out",
+      "decision": "fix",
+      "issues": [{ "pattern": "lei_of_other_entity", "field": "lei", "correct": "INR2EJN1ERAN0W5ZP974" }]
+    },
+    "V-1012": {
+      "batch": "learning",
+      "decision": "escalate",
+      "issues": [{ "pattern": "lei_lapsed", "field": "lei" }]
+    },
+    "V-1013": {
+      "batch": "learning",
+      "decision": "escalate",
+      "issues": [{ "pattern": "lei_lapsed", "field": "lei" }]
+    },
+    "V-1014": {
+      "batch": "learning",
+      "decision": "escalate",
+      "issues": [{ "pattern": "lei_lapsed", "field": "lei" }]
+    },
+    "V-1015": {
+      "batch": "held_out",
+      "decision": "escalate",
+      "issues": [{ "pattern": "lei_lapsed", "field": "lei" }]
+    },
+    "V-1016": {
+      "batch": "held_out",
+      "decision": "escalate",
+      "issues": [{ "pattern": "lei_lapsed", "field": "lei" }]
+    },
+    "V-1017": {
+      "batch": "learning",
+      "decision": "fix",
+      "issues": [{ "pattern": "name_not_legal_name", "field": "name", "correct": "CATERPILLAR INC." }]
+    },
+    "V-1018": {
+      "batch": "learning",
+      "decision": "fix",
+      "issues": [{ "pattern": "name_not_legal_name", "field": "name", "correct": "DEERE & COMPANY" }]
+    },
+    "V-1019": {
+      "batch": "learning",
+      "decision": "fix",
+      "issues": [
+        { "pattern": "name_not_legal_name", "field": "name", "correct": "HONEYWELL INTERNATIONAL INC." }
+      ]
+    },
+    "V-1020": {
+      "batch": "held_out",
+      "decision": "fix",
+      "issues": [{ "pattern": "name_not_legal_name", "field": "name", "correct": "Koninklijke Philips N.V." }]
+    },
+    "V-1021": {
+      "batch": "held_out",
+      "decision": "fix",
+      "issues": [{ "pattern": "name_not_legal_name", "field": "name", "correct": "WALMART INC." }]
+    },
+    "V-1022": { "batch": "learning", "decision": "fix", "issues": [{ "pattern": "no_registry_coverage" }] },
+    "V-1023": { "batch": "learning", "decision": "fix", "issues": [{ "pattern": "no_registry_coverage" }] },
+    "V-1024": { "batch": "learning", "decision": "fix", "issues": [{ "pattern": "no_registry_coverage" }] },
+    "V-1025": { "batch": "held_out", "decision": "fix", "issues": [{ "pattern": "no_registry_coverage" }] },
+    "V-1026": { "batch": "held_out", "decision": "fix", "issues": [{ "pattern": "no_registry_coverage" }] },
+    "V-1027": { "batch": "learning", "decision": "ready", "issues": [] },
+    "V-1028": { "batch": "learning", "decision": "ready", "issues": [] },
+    "V-1029": { "batch": "held_out", "decision": "ready", "issues": [] },
+    "V-1030": {
+      "batch": "learning",
+      "decision": "escalate",
+      "issues": [
+        {
+          "pattern": "ambiguous_identity",
+          "candidates": [
+            "529900RYOYI5K0BZO684",
+            "529900W9BQ7G4X848C27",
+            "52990031PBPHFVEKU262",
+            "529900FHCMSHKZOZJ162",
+            "5299003R1SPPRIFHWM57"
+          ]
+        }
+      ]
+    },
+    "V-1031": {
+      "batch": "held_out",
+      "decision": "escalate",
+      "issues": [
+        { "pattern": "ambiguous_identity", "candidates": ["549300W9JLPW15XIFM52", "549300MLH00Y3BN4HD49"] }
+      ]
+    }
+  }
+}
