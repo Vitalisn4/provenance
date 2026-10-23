@@ -14,5 +14,6 @@ export const policy = {
     // Day 4 check-in deck: the Judge scores each verdict 0-3 on accuracy, appropriateness and actionability,
     // and a verdict below 7 of 9 goes to the analyst.
     minJudgeScore: 7,
+    maxJudgeScore: 9,
   },
 } as const;

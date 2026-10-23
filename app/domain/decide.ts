@@ -46,9 +46,13 @@ function judgeFact({ field, claimed, registries, accepted, judgeScore }: Fact): 
 
   const agreeing = registries.length + (claimed?.agrees ? 1 : 0);
   const status = claimed?.agrees === false ? "conflicting" : agreeing >= 2 ? "confirmed" : "unverified";
-  // Written so that a malformed score (NaN) escalates too.
-  if (!(judgeScore >= policy.decision.minJudgeScore)) {
-    return { field, status, action: escalate(`the Judge scored its ${field} verdict ${judgeScore}/9`) };
+  const { minJudgeScore, maxJudgeScore } = policy.decision;
+  if (!Number.isInteger(judgeScore) || judgeScore < minJudgeScore || judgeScore > maxJudgeScore) {
+    return {
+      field,
+      status,
+      action: escalate(`the Judge scored its ${field} verdict ${judgeScore}/${maxJudgeScore}`),
+    };
   }
   if (claimed?.agrees) return { field, status };
   return { field, status, action: { kind: "correct", field, value: accepted, source: support.source } };

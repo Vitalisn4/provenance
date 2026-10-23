@@ -91,7 +91,17 @@ describe("decide", () => {
       decision: "escalate",
       actions: [{ kind: "escalate", reason: `the Judge scored its city verdict ${score}/9` }],
     });
-    expect(checked({ ...ibmCity, judgeScore: NaN }).decision).toBe("escalate");
+  });
+
+  it("escalates a malformed Judge score and accepts the bar and the maximum", () => {
+    const { minJudgeScore, maxJudgeScore } = policy.decision;
+
+    for (const judgeScore of [NaN, Infinity, maxJudgeScore + 1, minJudgeScore + 0.5]) {
+      expect(checked({ ...ibmCity, judgeScore }).decision).toBe("escalate");
+    }
+    for (const judgeScore of [minJudgeScore, maxJudgeScore]) {
+      expect(checked({ ...ibmCity, judgeScore }).decision).toBe("ready");
+    }
   });
 
   it("never calls a supplier ready when no fact was checked", () => {
