@@ -1,0 +1,18 @@
+# Synthetic ERP vendor master. It joins the Zetaris Docker network so Zetaris can reach it as erp-db:5432;
+# no host port is published.
+services:
+  erp-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: erp
+      POSTGRES_USER: erp
+      POSTGRES_PASSWORD: ${ERP_DB_PASSWORD:?set ERP_DB_PASSWORD in .env}
+    volumes:
+      - ./data/erp:/docker-entrypoint-initdb.d:ro
+    networks: [zetaris]
+    restart: unless-stopped
+
+networks:
+  zetaris:
+    external: true
+    name: zetaris_default
