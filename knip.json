@@ -1,0 +1,4 @@
+{
+  "entry": ["app/engines/*/src/index.ts"],
+  "ignoreIssues": { "app/engines/**": ["exports", "types"] }
+}
