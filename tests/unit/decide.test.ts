@@ -58,7 +58,7 @@ describe("decide", () => {
   it("requests documents, never escalates, when no registry covers a field", () => {
     const uncovered: Fact = {
       field: "legal_name",
-      claimed: { value: "Kappa Pay Cameroon", agrees: false },
+      claimed: { value: "Douala Cold Chain SARL", agrees: false },
       registries: [],
       accepted: null,
       judgeScore: 0,
