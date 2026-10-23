@@ -27,17 +27,28 @@ function localSecrets(): [name: string, value: string][] {
   const file = path.join(ROOT, ".env");
   if (!existsSync(file)) return [];
   return Object.entries(parseEnv(readFileSync(file, "utf-8"))).flatMap(([name, value]) =>
-    /KEY|TOKEN|PASSWORD|SECRET/.test(name) && value && value.length >= 8 ? [[name, value]] : [],
+    /KEY|TOKEN|PASSWORD|SECRET/i.test(name) && value && value.length >= 8 ? [[name, value]] : [],
   );
 }
 
-function filesToScan(): string[] {
-  return execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard"], {
-    cwd: ROOT,
-    encoding: "utf-8",
-  })
-    .split("\n")
-    .filter((file) => file && existsSync(path.join(ROOT, file)));
+function git(...args: string[]): string {
+  return execFileSync("git", args, { cwd: ROOT, encoding: "utf-8" });
+}
+
+function lines(output: string): string[] {
+  return output.split("\n").filter(Boolean);
+}
+
+// What a commit could contain: every working copy, plus the staged version of files whose working copy differs.
+function contentsToScan(): [file: string, text: string][] {
+  const working = lines(git("ls-files", "--cached", "--others", "--exclude-standard"))
+    .filter((file) => existsSync(path.join(ROOT, file)))
+    .map((file): [string, string] => [file, readFileSync(path.join(ROOT, file), "utf-8")]);
+  const staged = lines(git("diff", "--name-only")).map((file): [string, string] => [
+    `${file} (staged)`,
+    git("show", `:${file}`),
+  ]);
+  return [...working, ...staged];
 }
 
 describe("secret scan", () => {
@@ -48,11 +59,10 @@ describe("secret scan", () => {
   });
 
   it("finds no secrets in files git would commit", () => {
-    const files = filesToScan();
-    expect(files).toContain(".env.example");
+    const contents = contentsToScan();
+    expect(contents.map(([file]) => file)).toContain(".env.example");
     const secrets = localSecrets();
-    const hits = files.flatMap((file) => {
-      const text = readFileSync(path.join(ROOT, file), "utf-8");
+    const hits = contents.flatMap(([file, text]) => {
       const leaked = secrets.filter(([, value]) => text.includes(value)).map(([name]) => name);
       return [...findSecrets(text), ...leaked].map((found) => `${file}: ${found}`);
     });
