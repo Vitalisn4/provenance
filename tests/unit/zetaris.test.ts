@@ -66,6 +66,14 @@ describe("Zetaris client", () => {
     expect(fetch).toHaveBeenCalledTimes(policy.zetaris.maxRetries + 1);
   });
 
+  it("reports a timeout as a timeout", async () => {
+    const { zetaris } = client(new DOMException("The operation timed out.", "TimeoutError"));
+
+    const error = await failure(zetaris.execute("SELECT 1"));
+    expect(error.message).toBe(`Zetaris did not answer within ${policy.zetaris.timeoutMs / 1000} s`);
+    expect(error.recoverable).toBe(true);
+  });
+
   it("never retries DDL", async () => {
     const { zetaris, fetch } = client(new TypeError("fetch failed"));
 
@@ -99,8 +107,10 @@ describe("Zetaris client", () => {
   });
 
   it("rejects an unexpected response shape", async () => {
-    const { zetaris } = client(reply(200, { rows: [] }));
+    for (const body of [{ rows: [] }, { headers: ["x"], data: [null] }]) {
+      const { zetaris } = client(reply(200, body));
 
-    expect((await failure(zetaris.query("SELECT 1"))).message).toMatch(/unexpected response shape/);
+      expect((await failure(zetaris.query("SELECT 1"))).message).toMatch(/unexpected response shape/);
+    }
   });
 });

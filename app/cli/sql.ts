@@ -3,8 +3,10 @@ import { createZetarisClient } from "../adapters/zetaris.ts";
 import { env } from "../config/env.ts";
 import { runCli } from "./runCli.ts";
 
-await runCli(async ([statement]) => {
-  if (!statement) {
+await runCli(async (args) => {
+  // Exactly one argument: running only the first of several could drop a WHERE clause.
+  const [statement] = args;
+  if (args.length !== 1 || !statement) {
     console.error('Usage: npm run sql -- "<one SQL statement>"');
     process.exitCode = 2;
     return;

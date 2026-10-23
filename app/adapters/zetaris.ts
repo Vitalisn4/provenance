@@ -41,7 +41,11 @@ async function send(config: ZetarisConfig, sql: string, deps: Dependencies): Pro
       signal: AbortSignal.timeout(policy.zetaris.timeoutMs),
     });
   } catch (cause) {
-    throw new AppError("zetaris", `Zetaris is unreachable at ${config.restUrl}`, true, { cause });
+    const message =
+      cause instanceof Error && cause.name === "TimeoutError"
+        ? `Zetaris did not answer within ${policy.zetaris.timeoutMs / 1000} s`
+        : `Zetaris is unreachable at ${config.restUrl}`;
+    throw new AppError("zetaris", message, true, { cause });
   }
 
   const body: unknown = await response.json().catch(() => undefined);
@@ -54,7 +58,7 @@ async function send(config: ZetarisConfig, sql: string, deps: Dependencies): Pro
   }
 
   const { headers, data } = (body ?? {}) as { headers?: unknown; data?: unknown };
-  if (!Array.isArray(headers) || !Array.isArray(data)) {
+  if (!Array.isArray(headers) || !Array.isArray(data) || !data.every(Array.isArray)) {
     throw new AppError("zetaris", "Zetaris returned an unexpected response shape", false);
   }
   const { resultLimit } = policy.zetaris;
