@@ -17,7 +17,9 @@
     "conformance:hmem": "HMEM_IMPL=app/engines/hmem/src/index.ts tsx tests/conformance/hmem/runner.ts",
     "conformance:world-model": "WORLD_MODEL_IMPL=app/engines/world-model/src/index.ts tsx tests/conformance/world-model/runner.ts",
     "conformance": "npm run conformance:hmem && npm run conformance:world-model",
-    "check": "npm run typecheck && npm run lint && npm run unused && npm run format:check && npm test && npm run conformance"
+    "check": "npm run typecheck && npm run lint && npm run unused && npm run format:check && npm test && npm run conformance",
+    "sql": "tsx app/cli/sql.ts",
+    "zetaris:setup": "tsx app/cli/zetaris-setup.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
