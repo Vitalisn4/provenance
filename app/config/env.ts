@@ -83,10 +83,15 @@ export function meterlessConfig(source: Source = loadEnv()): MeterlessConfig {
   return { baseUrl: `${host}/v1`, runtimeToken };
 }
 
+// SEC fair access requires every EDGAR request to name the app and a contact email.
+export function secUserAgent(source: Source = loadEnv()): string {
+  return required(source, "SEC_USER_AGENT");
+}
+
 // Keyed by the {{PLACEHOLDER}} names in zetaris/setup/*.sql.
 export function setupValues(source: Source = loadEnv()): { SEC_USER_AGENT: string; ERP_DB_PASSWORD: string } {
   return {
-    SEC_USER_AGENT: required(source, "SEC_USER_AGENT"),
+    SEC_USER_AGENT: secUserAgent(source),
     ERP_DB_PASSWORD: required(source, "ERP_DB_PASSWORD"),
   };
 }
