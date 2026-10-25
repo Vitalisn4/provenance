@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { createMeterlessClient, TOKEN_HINT } from "../../app/adapters/meterless.ts";
 import { policy } from "../../app/config/policy.ts";
-import { AppError } from "../../app/domain/errors.ts";
+import { failure } from "./failure.ts";
 
 // A test double for Nightshift's HTTP API; the product only ever talks to the real runtime.
 const config = { baseUrl: "http://127.0.0.1:8088/v1", runtimeToken: "test-token-not-real" };
@@ -23,15 +23,6 @@ function client(...responses: (Response | Error)[]) {
   }
   const sleep = vi.fn<(ms: number) => Promise<void>>(() => Promise.resolve());
   return { meterless: createMeterlessClient(config, { fetch, sleep }), fetch, sleep };
-}
-
-async function failure(promise: Promise<unknown>): Promise<AppError> {
-  const error = await promise.then(
-    () => undefined,
-    (e: unknown) => e,
-  );
-  expect(error).toBeInstanceOf(AppError);
-  return error as AppError;
 }
 
 describe("Meterless client", () => {

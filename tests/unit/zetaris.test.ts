@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { createZetarisClient } from "../../app/adapters/zetaris.ts";
 import { policy } from "../../app/config/policy.ts";
-import { AppError } from "../../app/domain/errors.ts";
+import { failure } from "./failure.ts";
 
 const config = { restUrl: "http://zetaris.test/api/v1.0", orgId: "1", apiKey: "test-key-not-real" };
 
@@ -17,15 +17,6 @@ function client(...responses: (Response | Error)[]) {
   }
   const sleep = vi.fn(() => Promise.resolve());
   return { zetaris: createZetarisClient(config, { fetch, sleep }), fetch, sleep };
-}
-
-async function failure(promise: Promise<unknown>): Promise<AppError> {
-  const error = await promise.then(
-    () => undefined,
-    (e: unknown) => e,
-  );
-  expect(error).toBeInstanceOf(AppError);
-  return error as AppError;
 }
 
 describe("Zetaris client", () => {

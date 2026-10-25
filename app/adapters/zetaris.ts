@@ -9,7 +9,7 @@ interface QueryResult {
   rows: (string | null)[][];
 }
 
-interface ZetarisClient {
+export interface ZetarisClient {
   // Reads are idempotent, so transient failures are retried.
   query(sql: string): Promise<QueryResult>;
   // DDL is never retried: a repeated CREATE fails with "already exists".

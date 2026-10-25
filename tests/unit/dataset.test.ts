@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { isValidLei } from "../../app/domain/lei.ts";
 
 interface Issue {
   pattern: string;
@@ -43,16 +44,6 @@ function vendorRows(sql: string): VendorRow[] {
 
 const rows = vendorRows(read("erp/01_vendor_master.sql"));
 const suppliers = Object.entries(key.suppliers);
-
-function isValidLei(lei: string): boolean {
-  if (!/^[0-9A-Z]{18}[0-9]{2}$/.test(lei)) return false;
-  let remainder = 0;
-  for (const char of lei) {
-    const digits = String(parseInt(char, 36));
-    for (const digit of digits) remainder = (remainder * 10 + Number(digit)) % 97;
-  }
-  return remainder === 1;
-}
 
 describe("ERP dataset and answer key", () => {
   it("labels every vendor exactly once", () => {
@@ -138,14 +129,5 @@ describe("vendorRows", () => {
     ]) {
       expect(() => vendorRows(row), row).toThrow("Malformed row");
     }
-  });
-});
-
-describe("isValidLei", () => {
-  it("checks the ISO 17442 check digits", () => {
-    expect(isValidLei("VGRQXHF3J8VDLUA7XE92")).toBe(true);
-    expect(isValidLei("VGRQXHF3J8VDLUA7XE93")).toBe(false);
-    expect(isValidLei("vgrqxhf3j8vdlua7xe92")).toBe(false);
-    expect(isValidLei("VGRQXHF3J8VDLUA7XE9")).toBe(false);
   });
 });
