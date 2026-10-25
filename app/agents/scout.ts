@@ -39,12 +39,6 @@ const sicList =
 
 type Fields<T> = Record<keyof T, string | null>;
 
-interface Supplier {
-  vendorId: string;
-  lei: string | null;
-  cik: string | null;
-}
-
 // What the registries say about one supplier's claimed identifiers, read by the one query in `sql`. A null
 // registry record means there is none to show: the ERP has no identifier for that registry, or `gaps` says why.
 interface Evidence {
@@ -105,7 +99,7 @@ async function tableNames(zetaris: ZetarisClient, database: string): Promise<str
 export async function openScout(
   zetaris: ZetarisClient,
   secUserAgent: string,
-): Promise<{ suppliers: Supplier[]; gather: (supplier: Supplier) => Promise<Evidence> }> {
+): Promise<{ vendorIds: string[]; gather: (vendorId: string) => Promise<Evidence> }> {
   const userAgent = quotable("SEC_USER_AGENT", secUserAgent);
   const [erp, gleifTables, edgarTables] = await Promise.all([
     zetaris.query(
@@ -118,16 +112,18 @@ export async function openScout(
 
   // A vendor ID goes into the evidence query as a string literal, so only characters that need no escaping
   // are accepted; Spark reads a backslash in a literal as an escape.
-  const suppliers = erp.rows.map(([vendorId, lei = null, cik = null]) => {
-    if (!vendorId || !/^[\w-]+$/.test(vendorId)) {
-      throw new AppError(
-        "zetaris",
-        `ERP vendor_id ${JSON.stringify(vendorId)} cannot be queried safely`,
-        false,
-      );
-    }
-    return { vendorId, lei, cik };
-  });
+  const suppliers = new Map(
+    erp.rows.map(([vendorId, lei = null, cik = null]) => {
+      if (!vendorId || !/^[\w-]+$/.test(vendorId)) {
+        throw new AppError(
+          "zetaris",
+          `ERP vendor_id ${JSON.stringify(vendorId)} cannot be queried safely`,
+          false,
+        );
+      }
+      return [vendorId, { lei, cik }];
+    }),
+  );
 
   // Creates the table unless it exists; false when the registry has no such record or cannot be reached.
   async function register(name: string, ddl: string): Promise<boolean> {
@@ -167,7 +163,11 @@ export async function openScout(
     return null;
   }
 
-  async function gather({ vendorId, lei, cik }: Supplier): Promise<Evidence> {
+  // Takes only a vendor ID, so the identifiers looked up and the ID in the SQL are always the ERP's own.
+  async function gather(vendorId: string): Promise<Evidence> {
+    const supplier = suppliers.get(vendorId);
+    if (!supplier) throw new AppError("zetaris", `Supplier ${vendorId} is not in the ERP`, false);
+    const { lei, cik } = supplier;
     const gaps: string[] = [];
     const gleif = await gleifTable(lei, gaps);
     const edgar = await edgarTable(cik, gaps);
@@ -203,5 +203,5 @@ export async function openScout(
     };
   }
 
-  return { suppliers, gather };
+  return { vendorIds: [...suppliers.keys()], gather };
 }

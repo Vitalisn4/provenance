@@ -49,15 +49,11 @@ describe("Scout", () => {
         ["V-2", lei, null],
       ],
     });
-    const { suppliers, gather } = await openScout(zetaris, userAgent);
-    expect(suppliers).toEqual([
-      { vendorId: "V-1", lei, cik: "51143" },
-      { vendorId: "V-2", lei, cik: null },
-    ]);
+    const { vendorIds, gather } = await openScout(zetaris, userAgent);
+    expect(vendorIds).toEqual(["V-1", "V-2"]);
 
-    const [first, second] = suppliers;
-    const evidence = await gather(first ?? expect.fail());
-    await gather(second ?? expect.fail());
+    const evidence = await gather("V-1");
+    await gather("V-2");
 
     expect(execute).toHaveBeenCalledTimes(2);
     const [gleifDdl, edgarDdl] = execute.mock.calls.map(([sql]) => sql);
@@ -83,9 +79,9 @@ describe("Scout", () => {
       erp: [["V-1", lei, "51143"]],
       tables: ["prov_gleif.lei_vgrqxhf3j8vdlua7xe92", "prov_sec.edgar_0000051143"],
     });
-    const { suppliers, gather } = await openScout(zetaris, userAgent);
+    const { gather } = await openScout(zetaris, userAgent);
 
-    const evidence = await gather(suppliers[0] ?? expect.fail());
+    const evidence = await gather("V-1");
     expect(execute).not.toHaveBeenCalled();
     expect(evidence.gleif).not.toBeNull();
     expect(evidence.edgar).not.toBeNull();
@@ -93,9 +89,9 @@ describe("Scout", () => {
 
   it("does not query a registry for a malformed identifier", async () => {
     const { zetaris, execute } = fakeZetaris({ erp: [["V-1", "VGRQXHF3J8VDLUA7XE93", "51-143"]] });
-    const { suppliers, gather } = await openScout(zetaris, userAgent);
+    const { gather } = await openScout(zetaris, userAgent);
 
-    const evidence = await gather(suppliers[0] ?? expect.fail());
+    const evidence = await gather("V-1");
     expect(execute).not.toHaveBeenCalled();
     expect(evidence).toMatchObject({
       gleif: null,
@@ -118,9 +114,9 @@ describe("Scout", () => {
         return { columns: [], rows: [] };
       },
     });
-    const { suppliers, gather } = await openScout(zetaris, userAgent);
+    const { gather } = await openScout(zetaris, userAgent);
 
-    const evidence = await gather(suppliers[0] ?? expect.fail());
+    const evidence = await gather("V-1");
     expect(evidence.gleif).toBeNull();
     expect(evidence.edgar).not.toBeNull();
     expect(evidence.gaps).toEqual([`GLEIF has no record of LEI ${lei}, or could not be reached`]);
@@ -134,9 +130,9 @@ describe("Scout", () => {
         throw new AppError("zetaris", "Zetaris rejected the API key (401)", false);
       },
     });
-    const { suppliers, gather } = await openScout(zetaris, userAgent);
+    const { gather } = await openScout(zetaris, userAgent);
 
-    expect((await failure(gather(suppliers[0] ?? expect.fail()))).message).toMatch(/401/);
+    expect((await failure(gather("V-1"))).message).toMatch(/401/);
   });
 
   it("refuses a user agent or vendor ID that could alter the SQL", async () => {
@@ -150,6 +146,16 @@ describe("Scout", () => {
       );
       expect(error.message).toMatch(/cannot be queried safely/);
     }
+  });
+
+  it("gathers only suppliers in the ERP", async () => {
+    const { zetaris, execute } = fakeZetaris({ erp: [["V-1", lei, null]] });
+    const { gather } = await openScout(zetaris, userAgent);
+
+    expect((await failure(gather("V-2' OR '1'='1"))).message).toBe(
+      "Supplier V-2' OR '1'='1 is not in the ERP",
+    );
+    expect(execute).not.toHaveBeenCalled();
   });
 
   it("rejects a table listing without table names", async () => {
@@ -169,11 +175,11 @@ describe("Scout", () => {
       (columns) => ({ columns: columns.slice(1), rows: [columns.slice(1)] }),
     ];
     for (const evidence of results) {
-      const { suppliers, gather } = await openScout(
+      const { gather } = await openScout(
         fakeZetaris({ erp: [["V-1", null, null]], evidence }).zetaris,
         userAgent,
       );
-      expect((await failure(gather(suppliers[0] ?? expect.fail()))).message).toMatch(
+      expect((await failure(gather("V-1"))).message).toMatch(
         /^Evidence query (for V-1 returned \d rows, not 1|returned no erp_vendorId)$/,
       );
     }
