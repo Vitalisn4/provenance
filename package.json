@@ -4,6 +4,12 @@
   "private": true,
   "description": "Supplier-verification agents that turn their proven judgments into Zetaris data-quality rules. Open Agent Hackathon 2026, Track 1.",
   "type": "module",
+  "imports": {
+    "#world-model": {
+      "types": "./app/types/world-model.d.ts",
+      "default": "./app/engines/world-model/src/index.ts"
+    }
+  },
   "engines": {
     "node": ">=20.19"
   },
@@ -21,7 +27,8 @@
     "sql": "tsx app/cli/sql.ts",
     "zetaris:setup": "tsx app/cli/zetaris-setup.ts",
     "meterless:check": "tsx app/cli/meterless-check.ts",
-    "scout": "tsx app/cli/scout.ts"
+    "scout": "tsx app/cli/scout.ts",
+    "resolve": "tsx app/cli/resolve.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
