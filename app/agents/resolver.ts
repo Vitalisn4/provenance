@@ -66,9 +66,9 @@ interface Candidate {
   similarity: number;
 }
 
-// Which legal entity a supplier is: the one its claimed LEI names when that entity is in the supplier's
-// country, or else the one a GLEIF search for its name in that country finds. `candidates` are the search's
-// matches at or above the World Model's review band, best first, and `sql` is the query that read them.
+// Which legal entity a supplier is: the one its claimed LEI names when that entity is active and in the
+// supplier's country, or else the one a complete GLEIF search for its name in that country finds. `candidates` are
+// the search's matches at or above the World Model's review band, best first, and `sql` is the query that read them.
 type Resolution = { candidates: Candidate[]; notes: string[]; sql: string | null } & (
   { identity: "clear"; entity: Entity } | { identity: "ambiguous" | "unmatched" }
 );
@@ -138,7 +138,7 @@ export function openResolver(zetaris: ZetarisClient): {
       if (await register("prov_gleif", table, ddl)) searches.set(table, spelling);
       else notes.push(`GLEIF could not be searched for "${spelling}"`);
     }
-    if (searches.size === 0) return { found: [], sql: null };
+    if (searches.size === 0) return { found: [], sql: null, complete: false };
 
     // Each row names its table, a hex digest and so safe as a literal, because UNION ALL keeps no order.
     const sql = [...searches.keys()]
@@ -148,28 +148,39 @@ export function openResolver(zetaris: ZetarisClient): {
       )
       .join("\nUNION ALL\n");
     const found = new Map<string, Entity>();
+    let complete = searches.size === spellings.length;
     for (const [table, total, records] of (await zetaris.query(sql)).rows) {
       const page = entities(records ?? "[]");
       if (Number(total) > page.length) {
+        complete = false;
         notes.push(
           `a GLEIF search for "${searches.get(table ?? "") ?? name}" matched ${total} entities; only ${page.length} were compared`,
         );
       }
       for (const entity of page) found.set(entity.lei, entity);
     }
-    return { found: [...found.values()], sql };
+    return { found: [...found.values()], sql, complete };
   }
 
   async function resolve({ erp, gleif }: Evidence): Promise<Resolution> {
     const notes: string[] = [];
-    if (gleif?.lei && gleif.legalName && gleif.country !== null && gleif.country === erp.country) {
+    // An inactive entity has ceased to exist, so no supplier can still be it.
+    const inactive = gleif?.entityStatus === "INACTIVE";
+    if (
+      gleif?.lei &&
+      gleif.legalName &&
+      gleif.country !== null &&
+      gleif.country === erp.country &&
+      !inactive
+    ) {
       const { lei, legalName, country, registrationStatus, entityStatus } = gleif;
       const entity = { lei, legalName, country, registrationStatus, entityStatus };
       return { identity: "clear", entity, candidates: [], notes, sql: null };
     }
     if (gleif?.lei) {
       notes.push(
-        `claimed LEI ${gleif.lei} is ${gleif.legalName ?? "an entity"} in ${gleif.country ?? "no country"}`,
+        `claimed LEI ${gleif.lei} is ${gleif.legalName ?? "an entity"} in ${gleif.country ?? "no country"}` +
+          (inactive ? ", which GLEIF records as inactive" : ""),
       );
     }
     const { name, country } = erp;
@@ -179,7 +190,7 @@ export function openResolver(zetaris: ZetarisClient): {
     }
 
     const { form } = parse(name);
-    const { found, sql } = await search(name, form, country, notes);
+    const { found, sql, complete } = await search(name, form, country, notes);
     const candidates = found
       .filter((entity) => entity.entityStatus !== "INACTIVE")
       .map((entity) => ({ entity, similarity: similarity(name, entity.legalName) }))
@@ -187,6 +198,10 @@ export function openResolver(zetaris: ZetarisClient): {
       .sort((a, b) => b.similarity - a.similarity);
     const [best, ...rest] = candidates;
 
+    if (!complete) {
+      notes.push("the search was incomplete, so it can neither settle on one entity nor rule all out");
+      return { identity: "ambiguous", candidates, notes, sql };
+    }
     if (!best) {
       notes.push(`GLEIF has no active entity named like "${name}" in ${country}`);
       return { identity: "unmatched", candidates, notes, sql };

@@ -81,6 +81,21 @@ describe("Resolver", () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
+  it("searches instead when the claimed LEI's entity is inactive", async () => {
+    const { zetaris } = fakeZetaris({
+      "Acme GmbH": { total: 2, records: [record("L9", "Acme GmbH", "INACTIVE"), record("L1", "Acme GmbH")] },
+    });
+    const claimed = { lei: "L9", legalName: "Acme GmbH", country: "DE", entityStatus: "INACTIVE" };
+
+    const resolution = await openResolver(zetaris).resolve(evidence("Acme GmbH", "DE", claimed));
+
+    expect(resolution).toMatchObject({
+      identity: "clear",
+      entity: { lei: "L1" },
+      notes: ["claimed LEI L9 is Acme GmbH in DE, which GLEIF records as inactive"],
+    });
+  });
+
   it("searches every spelling of the legal form when the claimed LEI is another country's entity", async () => {
     const { zetaris, execute } = fakeZetaris({
       "Siemens AG": {
@@ -191,22 +206,13 @@ describe("Resolver", () => {
   });
 
   it("reports a supplier GLEIF cannot match", async () => {
-    const { zetaris, execute } = fakeZetaris({ "Kribi Logistics SARL": "unreachable" });
+    const { zetaris, execute } = fakeZetaris();
     const { resolve } = openResolver(zetaris);
 
     expect(await resolve(evidence("Douala Cold Chain Sarl", "CM"))).toMatchObject({
       identity: "unmatched",
       candidates: [],
       notes: ['GLEIF has no active entity named like "Douala Cold Chain Sarl" in CM'],
-    });
-    expect(await resolve(evidence("Kribi Logistics SARL", "CM"))).toEqual({
-      identity: "unmatched",
-      candidates: [],
-      notes: [
-        'GLEIF could not be searched for "Kribi Logistics SARL"',
-        'GLEIF has no active entity named like "Kribi Logistics SARL" in CM',
-      ],
-      sql: null,
     });
     const unsearchable: [string | null, string | null][] = [
       [null, "CM"],
@@ -222,19 +228,35 @@ describe("Resolver", () => {
     expect(await resolve(evidence("Acme GmbH", null, { lei: "L1", legalName: "Acme GmbH" }))).toMatchObject({
       identity: "unmatched",
     });
-    expect(execute).toHaveBeenCalledTimes(2);
+    expect(execute).toHaveBeenCalledTimes(1);
   });
 
-  it("notes a search that matched more entities than it compared", async () => {
+  it("settles nothing from an incomplete search", async () => {
+    const incomplete = "the search was incomplete, so it can neither settle on one entity nor rule all out";
     const { zetaris } = fakeZetaris({
-      "Acme Corporation": { total: 250, records: [record("L1", "Acme Corporation")] },
+      "Kribi Logistics SARL": "unreachable",
+      "Acme Ltd": { total: 1, records: [record("L1", "Acme Ltd")] },
+      "Acme Limited": "unreachable",
+      "Acme Corporation": { total: 250, records: [record("L2", "Acme Corporation")] },
     });
+    const { resolve } = openResolver(zetaris);
 
-    const resolution = await openResolver(zetaris).resolve(evidence("Acme Corp", "US"));
-
-    expect(resolution.notes).toEqual([
-      'a GLEIF search for "Acme Corporation" matched 250 entities; only 1 were compared',
-    ]);
+    expect(await resolve(evidence("Kribi Logistics SARL", "CM"))).toEqual({
+      identity: "ambiguous",
+      candidates: [],
+      notes: ['GLEIF could not be searched for "Kribi Logistics SARL"', incomplete],
+      sql: null,
+    });
+    expect(await resolve(evidence("Acme Ltd", "GB"))).toMatchObject({
+      identity: "ambiguous",
+      candidates: [{ entity: { lei: "L1" } }],
+      notes: ['GLEIF could not be searched for "Acme Limited"', incomplete],
+    });
+    expect(await resolve(evidence("Acme Corp", "US"))).toMatchObject({
+      identity: "ambiguous",
+      candidates: [{ entity: { lei: "L2" } }],
+      notes: ['a GLEIF search for "Acme Corporation" matched 250 entities; only 1 were compared', incomplete],
+    });
   });
 
   it("rejects search results it cannot read", async () => {
