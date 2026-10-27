@@ -29,7 +29,7 @@
     "meterless:check": "tsx app/cli/meterless-check.ts",
     "scout": "tsx app/cli/scout.ts",
     "resolve": "tsx app/cli/resolve.ts",
-    "judge": "tsx app/cli/judge.ts",
+    "verify": "tsx app/cli/verify.ts",
     "evaluate": "tsx app/cli/evaluate.ts"
   },
   "devDependencies": {

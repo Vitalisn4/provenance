@@ -38,12 +38,13 @@ function fakeZetaris({
   };
   const query = vi.fn((sql: string) => Promise.resolve().then(() => respond(sql)));
   const execute = vi.fn((sql: string) => Promise.resolve().then(() => respond(sql)));
-  return { zetaris: { query, execute }, execute };
+  const evidenceSql = () => query.mock.calls.at(-1)?.[0] ?? "";
+  return { zetaris: { query, execute }, execute, evidenceSql };
 }
 
 describe("Scout", () => {
   it("registers each missing registry table once and reads a supplier's records in one query", async () => {
-    const { zetaris, execute } = fakeZetaris({
+    const { zetaris, execute, evidenceSql } = fakeZetaris({
       erp: [
         ["V-1", lei, "51143"],
         ["V-2", lei, null],
@@ -53,12 +54,14 @@ describe("Scout", () => {
     expect(vendorIds).toEqual(["V-1", "V-2"]);
 
     const evidence = await gather("V-1");
+    const sql = evidenceSql();
     await gather("V-2");
 
     expect(execute).toHaveBeenCalledTimes(2);
     const [gleifDdl, edgarDdl] = execute.mock.calls.map(([sql]) => sql);
     expect(gleifDdl).toMatch(/^CREATE LIGHTNING REST TABLE lei_vgrqxhf3j8vdlua7xe92 FROM PROV_GLEIF /);
     expect(gleifDdl).toContain(`"https://api.gleif.org/api/v1/lei-records/${lei}"`);
+    expect(gleifDdl).toContain('HEADER (accept "application/vnd.api+json")');
     expect(edgarDdl).toMatch(/^CREATE LIGHTNING REST TABLE edgar_0000051143 FROM PROV_SEC /);
     expect(edgarDdl).toContain('"https://data.sec.gov/submissions/CIK0000051143.json"');
     expect(edgarDdl).toContain(`HEADER (user-agent "${userAgent}")`);
@@ -69,9 +72,9 @@ describe("Scout", () => {
       edgar: { sic: "edgar_sic", city: "edgar_city", sicListDescription: "edgar_sicListDescription" },
       gaps: [],
     });
-    expect(evidence.sql).toContain("LEFT JOIN prov_gleif.lei_vgrqxhf3j8vdlua7xe92 g ON true");
-    expect(evidence.sql).toContain("LEFT JOIN prov_sec.edgar_0000051143 s ON true");
-    expect(evidence.sql).toMatch(/WHERE e\.vendor_id = 'V-1'$/);
+    expect(sql).toContain("LEFT JOIN prov_gleif.lei_vgrqxhf3j8vdlua7xe92 g ON true");
+    expect(sql).toContain("LEFT JOIN prov_sec.edgar_0000051143 s ON true");
+    expect(sql).toMatch(/WHERE e\.vendor_id = 'V-1'$/);
   });
 
   it("reuses the tables Zetaris already has", async () => {
@@ -88,7 +91,9 @@ describe("Scout", () => {
   });
 
   it("does not query a registry for a malformed identifier", async () => {
-    const { zetaris, execute } = fakeZetaris({ erp: [["V-1", "VGRQXHF3J8VDLUA7XE93", "51-143"]] });
+    const { zetaris, execute, evidenceSql } = fakeZetaris({
+      erp: [["V-1", "VGRQXHF3J8VDLUA7XE93", "51-143"]],
+    });
     const { gather } = await openScout(zetaris, userAgent);
 
     const evidence = await gather("V-1");
@@ -101,11 +106,11 @@ describe("Scout", () => {
         "claimed CIK 51-143 is not a CIK number, so EDGAR was not queried",
       ],
     });
-    expect(evidence.sql).not.toMatch(/prov_gleif|prov_sec/);
+    expect(evidenceSql()).not.toMatch(/prov_gleif|prov_sec/);
   });
 
   it("records a registry that has no record and leaves it out of the query", async () => {
-    const { zetaris } = fakeZetaris({
+    const { zetaris, evidenceSql } = fakeZetaris({
       erp: [["V-1", lei, "51143"]],
       create: (sql) => {
         if (sql.includes("PROV_GLEIF")) {
@@ -120,7 +125,7 @@ describe("Scout", () => {
     expect(evidence.gleif).toBeNull();
     expect(evidence.edgar).not.toBeNull();
     expect(evidence.gaps).toEqual([`GLEIF has no record of LEI ${lei}, or could not be reached`]);
-    expect(evidence.sql).not.toContain("prov_gleif");
+    expect(evidenceSql()).not.toContain("prov_gleif");
   });
 
   it("refuses a user agent or vendor ID that could alter the SQL", async () => {
