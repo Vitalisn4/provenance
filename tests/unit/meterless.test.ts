@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { RetryListener } from "../../app/adapters/http.ts";
 import { createMeterlessClient, TOKEN_HINT } from "../../app/adapters/meterless.ts";
 import { policy } from "../../app/config/policy.ts";
 import { failure } from "./failure.ts";
@@ -75,10 +76,17 @@ describe("Meterless client", () => {
     const limited = () => reply(429, { error: { message: "rate limited" } });
     const { meterless, fetch, sleep } = client(limited(), limited(), limited(), limited());
 
-    const error = await failure(meterless.chat("fast", question));
+    const onRetry = vi.fn<RetryListener>();
+
+    const error = await failure(meterless.chat("fast", question, onRetry));
     expect(error).toMatchObject({ message: "Nightshift: rate limited", recoverable: true });
     expect(fetch).toHaveBeenCalledTimes(4);
     expect(sleep.mock.calls).toEqual([[2_000], [4_000], [8_000]]);
+    expect(onRetry.mock.calls.map(([problem, delayMs]) => [problem.message, delayMs])).toEqual([
+      ["Nightshift: rate limited", 2_000],
+      ["Nightshift: rate limited", 4_000],
+      ["Nightshift: rate limited", 8_000],
+    ]);
   });
 
   it("retries a reply that times out while its body is still arriving", async () => {

@@ -40,10 +40,10 @@ function evidence(erp: Partial<Evidence["erp"]>, edgar: Partial<Evidence["edgar"
 
 function clear(legalName: string, registrationStatus = "ISSUED"): Resolution {
   const entity = { lei, legalName, country: "US", registrationStatus, entityStatus: "ACTIVE" };
-  return { identity: "clear", entity, candidates: [], notes: [] };
+  return { identity: "clear", entity, candidates: [], compared: 0, notes: [] };
 }
 
-const unmatched: Resolution = { identity: "unmatched", candidates: [], notes: [] };
+const unmatched: Resolution = { identity: "unmatched", candidates: [], compared: 0, notes: [] };
 
 type Entry = Record<string, unknown>;
 
@@ -267,7 +267,7 @@ describe("Judge", () => {
 
   it("asks no model about an ambiguous identity", async () => {
     const fake = chat("");
-    const ambiguous: Resolution = { identity: "ambiguous", candidates: [], notes: [] };
+    const ambiguous: Resolution = { identity: "ambiguous", candidates: [], compared: 0, notes: [] };
 
     await expect(judge(fake, caterpillar, ambiguous)).resolves.toEqual({
       check: { identity: "ambiguous" },
@@ -290,9 +290,14 @@ describe("Judge", () => {
     const fake = replying(verdict("name", { agrees: { ERP: true } }), verdict("lei"));
     fake.mockResolvedValueOnce({ content: "1. Analyse the facts.", model });
 
-    const { check } = await judge(fake, evidence({ name: "Acme" }), clear("ACME INC"));
+    const onRevision = vi.fn();
+
+    const { check } = await judge(fake, evidence({ name: "Acme" }), clear("ACME INC"), onRevision);
 
     expect(fake).toHaveBeenCalledTimes(2);
+    expect(onRevision).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ message: "The Judge's reply is not JSON" }),
+    );
     expect(check).toMatchObject({ facts: [{ claimed: { agrees: true } }, { field: "lei" }] });
   });
 

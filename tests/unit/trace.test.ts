@@ -25,7 +25,10 @@ describe("Trace", () => {
         action: "gather",
         input_summary: "key ...redacted",
         output_summary: "got\n...redacted",
+        target_agent: null,
         model: null,
+        confidence: null,
+        retry_count: 0,
         status: "success",
       },
     ]);
@@ -93,6 +96,75 @@ describe("Trace", () => {
       ["zetaris_query", "SELECT a", "2 rows", "success"],
       ["zetaris_execute", "CREATE t", "zetaris error: Zetaris: REST API call failed", "error"],
     ]);
+  });
+
+  it("shows a step's handoff, confidence and retries on its line", () => {
+    const { trace, lines, events } = testTrace();
+
+    trace.log({
+      agent: "Judge",
+      action: "judge",
+      output: "ok",
+      target: "Decision",
+      confidence: 0.875,
+      retries: 1,
+    });
+    trace.log({ agent: "Judge", action: "critique", output: "again", retries: 2, status: "needs_revision" });
+
+    expect(events()[0]).toMatchObject({ target_agent: "Decision", confidence: 0.875, retry_count: 1 });
+    expect(lines).toEqual([
+      "[INFO] run_id=run-1 Judge judge -> Decision: ok (confidence 0.88) (after 1 retry)\n",
+      "[WARN] run_id=run-1 Judge critique: again (after 2 retries)\n",
+    ]);
+  });
+
+  it("logs each retry of a request, then its recovery or its failure", async () => {
+    const { trace, events } = testTrace();
+    const outage = new AppError("zetaris", "Zetaris is unreachable", true);
+    const zetaris = tracedZetaris(
+      {
+        query: (sql, onRetry) => {
+          onRetry?.(outage, 500);
+          onRetry?.(outage, 1000);
+          return sql === "SELECT a" ? Promise.resolve({ columns: [], rows: [] }) : Promise.reject(outage);
+        },
+        execute: () => Promise.reject(outage),
+      },
+      trace,
+      "Resolver",
+    );
+    const chat = tracedChat(
+      (_route, _messages, onRetry) => {
+        onRetry?.(new AppError("meterless", "Nightshift: busy", true), 2000);
+        return Promise.resolve({ content: "{}", model: "m" });
+      },
+      trace,
+      "Judge",
+    );
+
+    await zetaris.query("SELECT a");
+    await failure(zetaris.query("SELECT b"));
+    await chat("deep", []);
+
+    expect(
+      events().map(({ agent_name, action, input_summary, output_summary, retry_count, status }) => [
+        agent_name,
+        action,
+        action === "retry" ? input_summary : output_summary,
+        retry_count,
+        status,
+      ]),
+    ).toEqual([
+      ["Resolver", "retry", "zetaris_query", 1, "retrying"],
+      ["Resolver", "retry", "zetaris_query", 2, "retrying"],
+      ["Resolver", "zetaris_query", "0 rows", 2, "success"],
+      ["Resolver", "retry", "zetaris_query", 1, "retrying"],
+      ["Resolver", "retry", "zetaris_query", 2, "retrying"],
+      ["Resolver", "zetaris_query", "zetaris error: Zetaris is unreachable", 2, "error"],
+      ["Judge", "retry", "nightshift_chat", 1, "retrying"],
+      ["Judge", "nightshift_chat", expect.stringMatching(/^2 characters/) as unknown, 1, "success"],
+    ]);
+    expect(events()[0]?.output_summary).toBe("zetaris error: Zetaris is unreachable; retry 1 in 0.5 s");
   });
 
   it("logs each Nightshift call with the route asked and the model that answered", async () => {

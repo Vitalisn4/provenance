@@ -72,9 +72,10 @@ interface Candidate {
 }
 
 // Which legal entity a supplier is: the one its claimed LEI names when that entity is active and in the
-// supplier's country, or else the one a complete GLEIF search for its name in that country finds. `candidates`
-// are the search's matches at or above the World Model's review band, best first.
-export type Resolution = { candidates: Candidate[]; notes: string[] } & (
+// supplier's country, or else the one a complete GLEIF search for its name in that country finds. `compared`
+// counts the active entities the search found, each scored by the World Model; `candidates` are those at or
+// above its review band, best first.
+export type Resolution = { candidates: Candidate[]; compared: number; notes: string[] } & (
   { identity: "clear"; entity: Entity } | { identity: "ambiguous" | "unmatched" }
 );
 
@@ -183,7 +184,7 @@ export function openResolver(zetaris: ZetarisClient): {
     ) {
       const { lei, legalName, country, registrationStatus, entityStatus } = gleif;
       const entity = { lei, legalName, country, registrationStatus, entityStatus };
-      return { identity: "clear", entity, candidates: [], notes };
+      return { identity: "clear", entity, candidates: [], compared: 0, notes };
     }
     if (gleif?.lei) {
       notes.push(
@@ -194,13 +195,14 @@ export function openResolver(zetaris: ZetarisClient): {
     const { name, country } = erp;
     if (!name || !country || !/^[A-Z]{2}$/.test(country)) {
       notes.push("the ERP lacks the name or two-letter country a GLEIF search needs");
-      return { identity: "unmatched", candidates: [], notes };
+      return { identity: "unmatched", candidates: [], compared: 0, notes };
     }
 
     const { form } = parse(name);
     const { found, complete } = await search(name, form, country, notes);
-    const candidates = found
-      .filter((entity) => entity.entityStatus !== "INACTIVE")
+    const active = found.filter((entity) => entity.entityStatus !== "INACTIVE");
+    const compared = active.length;
+    const candidates = active
       .map((entity) => ({ entity, similarity: similarity(name, entity.legalName) }))
       .filter((candidate) => decide(candidate.similarity) !== "new")
       .sort((a, b) => b.similarity - a.similarity);
@@ -208,23 +210,23 @@ export function openResolver(zetaris: ZetarisClient): {
 
     if (!complete) {
       notes.push("the search was incomplete, so it can neither settle on one entity nor rule all out");
-      return { identity: "ambiguous", candidates, notes };
+      return { identity: "ambiguous", candidates, compared, notes };
     }
     if (!best) {
       notes.push(`GLEIF has no active entity named like "${name}" in ${country}`);
-      return { identity: "unmatched", candidates, notes };
+      return { identity: "unmatched", candidates, compared, notes };
     }
     if (!form) {
       notes.push(`"${name}" has no legal form, so it names a brand rather than one legal entity`);
-      return { identity: "ambiguous", candidates, notes };
+      return { identity: "ambiguous", candidates, compared, notes };
     }
     if (rest.length === 0 && decide(best.similarity) === "auto-merge") {
-      return { identity: "clear", entity: best.entity, candidates, notes };
+      return { identity: "clear", entity: best.entity, candidates, compared, notes };
     }
     notes.push(
       `no candidate is a clear match for "${name}": ${candidates.length} scored, the closest ${best.similarity.toFixed(2)}`,
     );
-    return { identity: "ambiguous", candidates, notes };
+    return { identity: "ambiguous", candidates, compared, notes };
   }
 
   return { resolve };

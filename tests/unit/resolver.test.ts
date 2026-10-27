@@ -73,6 +73,7 @@ describe("Resolver", () => {
         entityStatus: null,
       },
       candidates: [],
+      compared: 0,
       notes: [],
     });
     expect(query).not.toHaveBeenCalled();
@@ -90,6 +91,7 @@ describe("Resolver", () => {
     expect(resolution).toMatchObject({
       identity: "clear",
       entity: { lei: "L1" },
+      compared: 1,
       notes: ["claimed LEI L9 is Acme GmbH in DE, which GLEIF records as inactive"],
     });
   });
@@ -250,6 +252,7 @@ describe("Resolver", () => {
     expect(await resolve(evidence("Kribi Logistics SARL", "CM"))).toEqual({
       identity: "ambiguous",
       candidates: [],
+      compared: 0,
       notes: ['GLEIF could not be searched for "Kribi Logistics SARL"', incomplete],
     });
     expect(await resolve(evidence("Acme Ltd", "GB"))).toMatchObject({

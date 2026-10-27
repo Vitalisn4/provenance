@@ -11,7 +11,10 @@ interface TraceEvent {
   action: string;
   input_summary: string | null;
   output_summary: string;
+  target_agent: string | null;
   model: string | null;
+  confidence: number | null;
+  retry_count: number;
   status: string;
 }
 

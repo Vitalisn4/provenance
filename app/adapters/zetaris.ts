@@ -2,7 +2,13 @@ import { randomUUID } from "node:crypto";
 import { policy } from "../config/policy.ts";
 import type { ZetarisConfig } from "../config/env.ts";
 import { AppError } from "../domain/errors.ts";
-import { defaultDependencies, requestJson, withRetries, type Dependencies } from "./http.ts";
+import {
+  defaultDependencies,
+  requestJson,
+  withRetries,
+  type Dependencies,
+  type RetryListener,
+} from "./http.ts";
 
 export interface QueryResult {
   columns: string[];
@@ -11,7 +17,7 @@ export interface QueryResult {
 
 export interface ZetarisClient {
   // Reads are idempotent, so transient failures are retried.
-  query(sql: string): Promise<QueryResult>;
+  query(sql: string, onRetry?: RetryListener): Promise<QueryResult>;
   // DDL is never retried: a repeated CREATE fails with "already exists".
   execute(sql: string): Promise<QueryResult>;
 }
@@ -61,7 +67,7 @@ export function createZetarisClient(
   config: ZetarisConfig,
   deps: Dependencies = defaultDependencies,
 ): ZetarisClient {
-  function run(sql: string, maxRetries: number): Promise<QueryResult> {
+  function run(sql: string, maxRetries: number, onRetry?: RetryListener): Promise<QueryResult> {
     // Zetaris runs one statement per call and rejects a trailing semicolon.
     const statement = sql.trim().replace(/;+$/, "").trim();
     return withRetries(
@@ -69,11 +75,12 @@ export function createZetarisClient(
       maxRetries,
       policy.zetaris.retryBaseDelayMs,
       deps,
+      onRetry,
     );
   }
 
   return {
-    query: (sql) => run(sql, policy.zetaris.maxRetries),
+    query: (sql, onRetry) => run(sql, policy.zetaris.maxRetries, onRetry),
     execute: (sql) => run(sql, 0),
   };
 }

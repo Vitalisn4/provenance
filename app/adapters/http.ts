@@ -49,19 +49,24 @@ function parseJson(text: string): unknown {
   }
 }
 
+export type RetryListener = (error: AppError, delayMs: number) => void;
+
 // Retries recoverable failures, waiting baseDelayMs, then twice that, and so on.
 export async function withRetries<T>(
   attempt: () => Promise<T>,
   maxRetries: number,
   baseDelayMs: number,
   deps: Dependencies,
+  onRetry?: RetryListener,
 ): Promise<T> {
   for (let retry = 0; ; retry++) {
     try {
       return await attempt();
     } catch (error) {
       if (!(error instanceof AppError) || !error.recoverable || retry >= maxRetries) throw error;
-      await deps.sleep(baseDelayMs * 2 ** retry);
+      const delayMs = baseDelayMs * 2 ** retry;
+      onRetry?.(error, delayMs);
+      await deps.sleep(delayMs);
     }
   }
 }
