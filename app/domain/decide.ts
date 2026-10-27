@@ -47,7 +47,12 @@ function judgeFact({ field, claimed, registries, accepted, judgeScore }: Fact): 
   const agreeing = registries.length + (claimed?.agrees ? 1 : 0);
   const status = claimed?.agrees === false ? "conflicting" : agreeing >= 2 ? "confirmed" : "unverified";
   const { minJudgeScore, maxJudgeScore } = policy.decision;
-  if (!Number.isInteger(judgeScore) || judgeScore < minJudgeScore || judgeScore > maxJudgeScore) {
+  if (
+    judgeScore === null ||
+    !Number.isInteger(judgeScore) ||
+    judgeScore < minJudgeScore ||
+    judgeScore > maxJudgeScore
+  ) {
     return {
       field,
       status,
