@@ -20,11 +20,13 @@ function digest(route: string, messages: unknown): string {
     .digest("hex");
 }
 
-// Keeps every answer the live clients give. A CREATE statement can carry the SEC contact, so recording refuses
-// one: a sample is recorded after a live run has created every table.
+// Keeps every answer the live clients give. A Nightshift reply already recorded for the same request is kept
+// rather than asked for again, so a change to the SQL does not cost a model call. A CREATE statement can carry
+// the SEC contact, so recording refuses one: a sample is recorded after a live run has created every table.
 export function recorder(
   zetaris: ZetarisClient,
   chat: Chat,
+  earlier: Recording["nightshift"] = {},
 ): { zetaris: ZetarisClient; chat: Chat; recording: Recording } {
   const recording: Recording = { zetaris: {}, nightshift: {} };
   return {
@@ -44,8 +46,10 @@ export function recorder(
         ),
     },
     async chat(route, messages, onRetry) {
-      const reply = await chat(route, messages, onRetry);
-      (recording.nightshift[digest(route, messages)] ??= []).push(reply);
+      const key = digest(route, messages);
+      const replies = (recording.nightshift[key] ??= []);
+      const reply = earlier[key]?.[replies.length] ?? (await chat(route, messages, onRetry));
+      replies.push(reply);
       return reply;
     },
     recording,
@@ -87,6 +91,11 @@ export function readRecording(): Recording {
     );
   }
   return JSON.parse(readFileSync(file, "utf8")) as Recording;
+}
+
+// The Nightshift replies of the current recording, if there is one.
+export function recordedReplies(): Recording["nightshift"] {
+  return existsSync(file) ? readRecording().nightshift : {};
 }
 
 // Keys are sorted by code unit, the same on every machine, so a new recording's diff shows only what changed.

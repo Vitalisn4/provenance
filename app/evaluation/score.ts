@@ -20,6 +20,13 @@ export function readAnswerKey(): AnswerKey {
   ) as AnswerKey;
 }
 
+// The suppliers whose Judge verdicts the Rule Smith learns from.
+export function learningBatch(key: AnswerKey): Set<string> {
+  return new Set(
+    Object.entries(key.suppliers).flatMap(([id, { batch }]) => (batch === "learning" ? [id] : [])),
+  );
+}
+
 // One supplier's line of a run, as `npm run verify` prints it.
 export type RunResult = { vendorId: string } & (
   { decision: Decision; actions: Action[] } | { error: string }

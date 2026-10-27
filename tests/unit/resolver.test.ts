@@ -53,6 +53,7 @@ function evidence(name: string | null, country: string | null, gleif: Partial<Ev
     },
     edgar: null,
     gaps: [],
+    rules: [],
   };
 }
 

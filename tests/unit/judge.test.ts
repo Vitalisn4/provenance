@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { MeterlessClient } from "../../app/adapters/meterless.ts";
 import { judge } from "../../app/agents/judge.ts";
 import type { Resolution } from "../../app/agents/resolver.ts";
+import { ruleLibrary } from "../../app/agents/rules.ts";
 import type { Evidence } from "../../app/agents/scout.ts";
 import { policy } from "../../app/config/policy.ts";
 import { decide } from "../../app/domain/decide.ts";
@@ -35,6 +36,7 @@ function evidence(erp: Partial<Evidence["erp"]>, edgar: Partial<Evidence["edgar"
       ...edgar,
     },
     gaps: [],
+    rules: [],
   };
 }
 
@@ -273,8 +275,119 @@ describe("Judge", () => {
       check: { identity: "ambiguous" },
       reasons: {},
       model: null,
+      rules: [],
+      contradicted: [],
     });
     expect(fake).not.toHaveBeenCalled();
+  });
+
+  describe("with learned rules", () => {
+    const learned = (...ids: string[]) => ruleLibrary.filter(({ id }) => ids.includes(id));
+    const gleif = {
+      lei,
+      legalName: "CATERPILLAR INC.",
+      country: "US",
+      jurisdiction: "US-DE",
+      registrationStatus: "ISSUED",
+      entityStatus: "ACTIVE",
+    };
+    const held = (erp: Partial<Evidence["erp"]>, rules: string[]): Evidence => ({
+      ...evidence(erp, {
+        name: "CATERPILLAR INC",
+        sic: "3531",
+        sicListDescription: "Construction Machinery",
+      }),
+      gleif,
+      rules,
+    });
+    const all = ["name_is_gleif_legal_name", "lei_is_claimed_record", "sic_is_listed_edgar_code"];
+
+    it("asks no model when promoted rules settle every fact, and names the rule on each", async () => {
+      const fake = chat("");
+
+      const {
+        check,
+        model: answered,
+        rules,
+      } = await judge(
+        fake,
+        held({ name: "Caterpillar Inc.", lei, sic: "3531" }, all),
+        clear("CATERPILLAR INC."),
+        { rules: learned(...all) },
+      );
+
+      expect(fake).not.toHaveBeenCalled();
+      expect(answered).toBeNull();
+      expect(rules).toEqual(all);
+      expect(check).toMatchObject({
+        facts: [
+          { field: "name", rule: all[0], judgeScore: null },
+          { field: "lei", rule: all[1], judgeScore: null },
+          { field: "sic", rule: all[2], judgeScore: null },
+        ],
+      });
+      expect(decide(check)).toMatchObject({ decision: "ready", actions: [] });
+    });
+
+    it("asks the model when a fact has no promoted rule, and reports a rule its verdict overturns", async () => {
+      const fake = replying(verdict("name", { agrees: { ERP: false } }), verdict("lei"), verdict("sic"));
+
+      const { check, rules, contradicted } = await judge(
+        fake,
+        held({ name: "Caterpillar Corp", lei, sic: "3531" }, [
+          "name_shares_first_word",
+          "lei_is_claimed_record",
+        ]),
+        clear("CATERPILLAR INC."),
+        { rules: learned("name_shares_first_word", "lei_is_claimed_record") },
+      );
+
+      expect(fake).toHaveBeenCalledOnce();
+      expect(rules).toEqual([]);
+      expect(contradicted).toEqual(["name_shares_first_word"]);
+      expect(check).toMatchObject({
+        facts: [
+          { field: "name", claimed: { agrees: false }, judgeScore: 9 },
+          { field: "lei" },
+          { field: "sic" },
+        ],
+      });
+      expect(check.identity === "clear" && check.facts.some((fact) => "rule" in fact)).toBe(false);
+    });
+
+    it("asks the model when a rule held but an exact comparison contradicts it", async () => {
+      const fake = replying(verdict("name"), verdict("lei"), verdict("sic"));
+
+      const { rules } = await judge(
+        fake,
+        held({ name: "Caterpillar Inc.", lei: "529900T8BM49AURSDO55", sic: "3531" }, all),
+        clear("CATERPILLAR INC."),
+        { rules: learned(...all) },
+      );
+
+      expect(fake).toHaveBeenCalledOnce();
+      expect(rules).toEqual([]);
+    });
+
+    it("asks the model when a rule held but leaves a value open, or Zetaris did not find it true", async () => {
+      const fake = replying(verdict("name", { agrees: { ERP: true, EDGAR: true } }), verdict("lei"));
+      const nokia = (rules: string[]) => ({
+        ...held({ name: "Nokia Oyj", lei }, rules),
+        edgar: { ...(held({}, []).edgar as NonNullable<Evidence["edgar"]>), name: "NOKIA CORP", sic: null },
+        gleif: { ...gleif, legalName: "Nokia Oyj" },
+      });
+      const promoted = { rules: learned("name_is_gleif_legal_name", "lei_is_claimed_record") };
+
+      await judge(
+        fake,
+        nokia(["name_is_gleif_legal_name", "lei_is_claimed_record"]),
+        clear("Nokia Oyj"),
+        promoted,
+      );
+      await judge(fake, nokia(["lei_is_claimed_record"]), clear("Nokia Oyj"), promoted);
+
+      expect(fake).toHaveBeenCalledTimes(2);
+    });
   });
 
   it("reads the answer after the model's reasoning, even inside a code fence", async () => {
@@ -292,7 +405,7 @@ describe("Judge", () => {
 
     const onRevision = vi.fn();
 
-    const { check } = await judge(fake, evidence({ name: "Acme" }), clear("ACME INC"), onRevision);
+    const { check } = await judge(fake, evidence({ name: "Acme" }), clear("ACME INC"), { onRevision });
 
     expect(fake).toHaveBeenCalledTimes(2);
     expect(onRevision).toHaveBeenCalledExactlyOnceWith(

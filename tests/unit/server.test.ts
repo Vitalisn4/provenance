@@ -56,7 +56,10 @@ const inputError = (message: string, runId: string | null = null) => ({
 });
 
 afterEach(() => {
-  for (const file of traces.splice(0)) rmSync(file, { force: true });
+  for (const file of traces.splice(0)) {
+    rmSync(file, { force: true });
+    rmSync(file.replace(/\.jsonl$/, "-hmem"), { recursive: true, force: true });
+  }
   lines.length = 0;
 });
 
@@ -93,6 +96,7 @@ describe("POST /run", () => {
       "Scout",
       "Resolver",
       "Judge",
+      "Rule Smith",
       "Decision",
     ]);
     expect(lastEvent(body.log_file)).toMatchObject({ action: "finish", output_summary: "1 ready, 1 fix" });
@@ -106,8 +110,13 @@ describe("POST /run", () => {
     expect(body.run_id).toMatch(/^run-\d{14}-[0-9a-f]{8}$/);
     expect(body).toMatchObject({
       trace_id: `trace-${body.run_id as string}`,
-      output: { evaluation: { learning: { correct: 18, total: 18 }, held_out: { correct: 13, total: 13 } } },
+      output: {
+        evaluation: { learning: { correct: 18, total: 18 }, held_out: { correct: 13, total: 13 } },
+        learning: { suppliers_judged_by_model: 20, suppliers_settled_by_rules: 5 },
+      },
     });
+    const { rules } = (body.output as { learning: { rules: { id: string; status: string }[] } }).learning;
+    expect(rules.filter(({ status }) => status === "promoted")).toHaveLength(4);
   });
 
   it("names the trace of a run whose ID is reused after its own file", async () => {
@@ -242,7 +251,8 @@ describe("POST /run", () => {
   });
 
   it("verifies typed-in suppliers, trimmed and labelled in order, with any requested ERP suppliers", async () => {
-    vi.mocked(verify).mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    const none = { suppliers: [], rules: [] };
+    vi.mocked(verify).mockResolvedValueOnce(none).mockResolvedValueOnce(none);
     const ten = Array.from({ length: 10 }, () => ({ name: "Acme", country: "GB" }));
     expect((await post({ input: { suppliers: ten } })).status).toBe(200);
 
@@ -256,7 +266,7 @@ describe("POST /run", () => {
       },
     });
 
-    expect(vi.mocked(verify).mock.lastCall?.slice(2)).toEqual([
+    expect(vi.mocked(verify).mock.lastCall?.slice(2, 4)).toEqual([
       ["V-1003"],
       [
         { vendorId: "input:1", name: "Acme", country: "GB", lei: null, cik: null, sic: null },
@@ -329,7 +339,10 @@ describe("POST /run", () => {
   });
 
   it("reports a run with a failed supplier as partial", async () => {
-    vi.mocked(verify).mockResolvedValueOnce([{ vendorId: "V-1003", error: "zetaris error: unreachable" }]);
+    vi.mocked(verify).mockResolvedValueOnce({
+      suppliers: [{ vendorId: "V-1003", error: "zetaris error: unreachable" }],
+      rules: [],
+    });
 
     const { body } = await post({ run_id: "test-server-4" });
 

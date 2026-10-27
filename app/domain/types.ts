@@ -21,12 +21,14 @@ export interface Fact {
   registries: RegistryValue[];
   // The registry value the field is checked against, or null when no registry gives one.
   accepted: string | null;
-  // The Judge's rubric score, or null when no registry covers the field and so nothing was judged.
+  // The Judge's rubric score, or null when no registry covers the field or a learned rule settled it.
   judgeScore: number | null;
+  // The learned rule that settled the field in the Judge's place.
+  rule?: string;
 }
 
 export type SupplierCheck =
-  // The Resolver matched the supplier to more than one legal entity, so no fact can be checked.
+  // The Resolver could not settle on one legal entity for the supplier, so no fact can be checked.
   | { identity: "ambiguous" }
   // At most one legal entity matched; with none, only the ERP knows the supplier.
   | {

@@ -3,6 +3,7 @@ import { policy } from "../config/policy.ts";
 import { AppError } from "../domain/errors.ts";
 import type { Fact, SupplierCheck } from "../domain/types.ts";
 import { legalForms, sameName, type Entity, type Resolution } from "./resolver.ts";
+import { confirms, holds, type Rule } from "./rules.ts";
 import type { Evidence } from "./scout.ts";
 
 // One source's value for a field. `agrees` says whether it states the accepted value; null leaves the call to
@@ -194,48 +195,102 @@ async function ask(
 }
 
 // What the Judge made of a supplier: the check `decide` takes, the model's reason for each verdict it
-// scored, and the model that answered, null when no fact needed one.
+// scored, and the model that answered, null when no fact needed one. `rules` are the learned rules that settled
+// every fact in the model's place; `contradicted` are learned rules that held but that the model overturned.
 interface Judgment {
   check: SupplierCheck;
   reasons: Record<string, string>;
   model: string | null;
+  rules: string[];
+  contradicted: string[];
+}
+
+// A draft with a rule's agreements filled in, or null when a value stays open or the rule contradicts one
+// settled by exact comparison.
+function settleByRule(draft: Draft, rule: Rule): Draft | null {
+  const apply = (value: Value): Value => ({
+    ...value,
+    agrees: value.agrees ?? (rule.agree.includes(value.source) || null),
+  });
+  const settled = {
+    ...draft,
+    claimed: draft.claimed && apply(draft.claimed),
+    registries: draft.registries.map(apply),
+  };
+  const values = [...(settled.claimed ? [settled.claimed] : []), ...settled.registries];
+  const consistent = values.every(
+    ({ source, agrees }) => agrees !== null && (agrees || !rule.agree.includes(source)),
+  );
+  return consistent ? settled : null;
 }
 
 // One deep-lane call per supplier, covering every fact a registry speaks to; a fact no registry covers
-// needs no call, because only documents from the supplier can settle it. `onRevision` hears of each rejected
-// reply that is asked for again.
+// needs no call, because only documents from the supplier can settle it. When learned `rules` settle every
+// fact a registry speaks to, the model is not asked. `onRevision` hears of each rejected reply that is asked
+// for again.
 export async function judge(
   chat: MeterlessClient["chat"],
   evidence: Evidence,
   resolution: Resolution,
-  onRevision?: (problem: AppError) => void,
+  { rules = [], onRevision }: { rules?: readonly Rule[]; onRevision?: (problem: AppError) => void } = {},
 ): Promise<Judgment> {
-  if (resolution.identity === "ambiguous")
-    return { check: { identity: "ambiguous" }, reasons: {}, model: null };
+  if (resolution.identity === "ambiguous") {
+    return { check: { identity: "ambiguous" }, reasons: {}, model: null, rules: [], contradicted: [] };
+  }
   const entity = resolution.identity === "clear" ? resolution.entity : null;
   const all = drafts(evidence, entity);
   const covered = all.filter((draft) => draft.registries.length > 0);
+  const learned = new Map(
+    covered.flatMap((draft) => {
+      const rule = rules.find(
+        (candidate) => candidate.field === draft.field && holds(candidate, evidence, resolution),
+      );
+      return rule ? [[draft.field, rule] as const] : [];
+    }),
+  );
+  const settled = covered.flatMap((draft) => {
+    const rule = learned.get(draft.field);
+    const result = rule && settleByRule(draft, rule);
+    return result ? [result] : [];
+  });
+  const byRules = covered.length > 0 && settled.length === covered.length;
 
   const { verdicts, model } =
-    covered.length > 0
+    covered.length > 0 && !byRules
       ? await ask(chat, covered, onRevision)
       : { verdicts: new Map<string, Verdict>(), model: null };
 
-  const facts = all.map(({ field, accepted, claimed, registries }): Fact => {
+  const facts = all.map((draft): Fact => {
+    const { field, accepted, claimed, registries } = byRules
+      ? (settled.find((result) => result.field === draft.field) ?? draft)
+      : draft;
     const verdict = verdicts.get(field);
     const settle = ({ source, value, agrees }: Value) => ({
       source,
       value,
       agrees: agrees ?? verdict?.agrees[source] ?? false,
     });
+    const rule = byRules ? learned.get(field)?.id : undefined;
     return {
       field,
       claimed: claimed && settle(claimed),
       registries: registries.map(settle),
       accepted,
       judgeScore: verdict?.score ?? null,
+      ...(rule && { rule }),
     };
   });
+  const contradicted = byRules
+    ? []
+    : [...learned.values()]
+        .filter(
+          (rule) =>
+            !confirms(
+              rule,
+              facts.find((fact) => fact.field === rule.field),
+            ),
+        )
+        .map(({ id }) => id);
   return {
     check: {
       identity: "clear",
@@ -244,5 +299,7 @@ export async function judge(
     },
     reasons: Object.fromEntries([...verdicts].map(([field, { reason }]) => [field, reason])),
     model,
+    rules: byRules ? [...learned.values()].map(({ id }) => id) : [],
+    contradicted,
   };
 }

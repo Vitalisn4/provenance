@@ -104,6 +104,19 @@ describe("decide", () => {
     }
   });
 
+  it("acts on a fact a learned rule settled without a Judge score, as the comparisons stand", () => {
+    const settled = { judgeScore: null, rule: "lei_is_claimed_record" };
+
+    expect(checked({ ...ibmCity, ...settled }).decision).toBe("ready");
+    expect(checked({ ...siemensLei, ...settled })).toMatchObject({
+      decision: "fix",
+      actions: [correctSiemensLei],
+    });
+    expect(checked({ ...ibmCity, ...settled, registries: [{ ...edgarCity, agrees: false }] }).decision).toBe(
+      "escalate",
+    );
+  });
+
   it("never calls a supplier ready when no fact was checked", () => {
     expect(checked()).toEqual({
       decision: "escalate",
@@ -123,7 +136,7 @@ describe("decide", () => {
     expect(decide({ identity: "ambiguous" })).toEqual({
       decision: "escalate",
       facts: [],
-      actions: [{ kind: "escalate", reason: "the supplier matches more than one legal entity" }],
+      actions: [{ kind: "escalate", reason: "the Resolver could not settle on one legal entity" }],
     });
   });
 });

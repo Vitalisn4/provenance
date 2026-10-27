@@ -19,14 +19,14 @@ export const policy = {
     // 5xx follow the same schedule.
     maxRetries: 3,
     retryBaseDelayMs: 2_000,
-    // Worksheet section 5: the fast lane (Nemotron Lightning) serves the Scout and Resolver, the deep lane
-    // (Nemotron Ultra) the Judge and Rule Smith; each lane is pinned to its model in Nightshift's settings.
+    // Each lane is pinned to its model in Nightshift's settings: the deep lane (Nemotron Ultra) serves the
+    // Judge, and `npm run meterless:check` checks that the fast lane (Nemotron Lightning) answers too.
     routes: { fast: "meterless/fast", deep: "meterless/deep" },
   },
   pipeline: {
-    // Technical Execution Guide, section 5: a full run should take 5-10 minutes. A Judge call takes about a
-    // minute, so the 31 demo suppliers run four at a time.
-    concurrency: 4,
+    // Technical Execution Guide, section 5: a full run should take 5-10 minutes. A Judge call takes up to a
+    // minute; four at a time, NVIDIA's rate limit refused Ultra calls even after the retries, so two at a time.
+    concurrency: 2,
   },
   decision: {
     // Day 4 check-in deck: the Judge scores each verdict 0-3 on accuracy, appropriateness and actionability,
@@ -35,5 +35,10 @@ export const policy = {
     maxJudgeScore: 9,
     // Our choice: a Judge reply without a complete verdict is asked for once more, then surfaces.
     judgeAttempts: 2,
+  },
+  ruleSmith: {
+    // Our choice: a rule is back-tested once it held for 3 verdicts in one cluster H-MEM dreamt, so a pair of
+    // coincidences cannot raise it, and promoted only if the Judge never contradicted it.
+    minSupport: 3,
   },
 } as const;

@@ -3,7 +3,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { basename } from "node:path";
 import type { NewSupplier } from "../agents/scout.ts";
 import { AppError, errorText, type ErrorType } from "../domain/errors.ts";
-import { readAnswerKey, score } from "../evaluation/score.ts";
+import { learningBatch, readAnswerKey, score } from "../evaluation/score.ts";
 import { openRun } from "../pipeline/run.ts";
 import type { Trace } from "../pipeline/trace.ts";
 import { describeAction, tally, verify } from "../pipeline/verify.ts";
@@ -19,7 +19,11 @@ const agents = [
   },
   {
     name: "Judge",
-    role: "Asks NVIDIA Nemotron through Meterless Nightshift which registry values state the ERP's facts",
+    role: "Asks NVIDIA Nemotron through Meterless Nightshift which registry values state the ERP's facts, unless rules the Rule Smith promoted settle them",
+  },
+  {
+    name: "Rule Smith",
+    role: "Remembers the Judge's verdicts on the learning batch in Meterless H-MEM, dreams over them, and promotes the SQL rules Zetaris checks that the Judge confirmed every time; demotes a rule the Judge later overturns",
   },
   { name: "Decision", role: "Turns the verdicts into ready, fix or escalate under a fixed policy" },
 ];
@@ -151,8 +155,15 @@ export function createApp({
       const sample = parsed.sample ?? sampleDefault;
       const opened = openRun({ sample, out, runId });
       trace = opened.trace;
-      const results = await verify(opened.clients, trace, parsed.vendorIds, parsed.suppliers);
       const key = readAnswerKey();
+      const { suppliers: results, rules } = await verify(
+        opened.clients,
+        trace,
+        parsed.vendorIds,
+        parsed.suppliers,
+        learningBatch(key),
+      );
+      const judged = results.flatMap((result) => ("rules" in result ? [result] : []));
       return {
         status: 200,
         body: {
@@ -171,6 +182,11 @@ export function createApp({
               results.filter(({ vendorId }) => Object.hasOwn(key.suppliers, vendorId)),
               key,
             ).batches,
+            learning: {
+              rules,
+              suppliers_judged_by_model: judged.filter(({ model }) => model !== null).length,
+              suppliers_settled_by_rules: judged.filter(({ rules }) => rules.length > 0).length,
+            },
           },
           agents,
           ...traceFields(trace),
