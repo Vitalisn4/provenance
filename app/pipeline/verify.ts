@@ -3,12 +3,13 @@ import type { MeterlessClient } from "../adapters/meterless.ts";
 import type { ZetarisClient } from "../adapters/zetaris.ts";
 import { judge } from "../agents/judge.ts";
 import { openResolver, type Resolution } from "../agents/resolver.ts";
+import { openRuleSmith, type RuleReport } from "../agents/ruleSmith.ts";
 import { openScout, type Evidence, type NewSupplier } from "../agents/scout.ts";
 import { policy } from "../config/policy.ts";
 import { decide } from "../domain/decide.ts";
 import { AppError, errorText } from "../domain/errors.ts";
 import type { Action } from "../domain/types.ts";
-import { tracedChat, tracedZetaris, type Trace } from "./trace.ts";
+import { tracedChat, tracedZetaris, type Step, type Trace } from "./trace.ts";
 
 export interface Clients {
   zetaris: ZetarisClient;
@@ -16,8 +17,10 @@ export interface Clients {
   secUserAgent: string;
 }
 
+// `rules` are the learned rules that settled the supplier's facts in the model's place.
 type SupplierResult = { vendorId: string } & (
-  (ReturnType<typeof decide> & { reasons: Record<string, string>; model: string | null }) | { error: string }
+  | (ReturnType<typeof decide> & { reasons: Record<string, string>; model: string | null; rules: string[] })
+  | { error: string }
 );
 
 // The requested vendor IDs in ERP order, or every ID when none is requested.
@@ -82,25 +85,30 @@ export function describeAction(action: Action): string {
 
 // Verifies each requested ERP supplier and each typed-in supplier, or with neither every ERP supplier: the
 // Scout gathers its registry evidence, the Resolver finds its legal entity, the Judge rules on each fact and
-// `decide` turns the verdicts into a decision. A supplier that fails is reported in its place, so one outage
-// does not cost the other results.
+// `decide` turns the verdicts into a decision. Suppliers in the `learning` batch go first, so the Rule Smith
+// can learn rules from the Judge's verdicts on them before the rest. A supplier that fails is reported in its
+// place, so one outage does not cost the other results.
 export async function verify(
   { zetaris, chat, secUserAgent }: Clients,
   trace: Trace,
   requested: readonly string[],
   typed: readonly NewSupplier[] = [],
-): Promise<SupplierResult[]> {
+  learning: ReadonlySet<string> = new Set(),
+): Promise<{ suppliers: SupplierResult[]; rules: RuleReport[] }> {
   const { vendorIds, gather } = await openScout(tracedZetaris(zetaris, trace, "Scout"), secUserAgent, typed);
   const fromErp = requested.length > 0 || typed.length === 0 ? selectSuppliers(requested, vendorIds) : [];
   const selected = [...fromErp, ...typed.map(({ vendorId }) => vendorId)];
   const { resolve } = openResolver(tracedZetaris(zetaris, trace, "Resolver"));
   const judgeChat = tracedChat(chat, trace, "Judge");
+  const ruleSmith = openRuleSmith(trace, trace.file.replace(/\.jsonl$/, "-hmem"));
   const { concurrency } = policy.pipeline;
   const typedIn = typed.length > 0 ? ` and ${typed.length} typed in` : "";
+  const learners = selected.filter((id) => learning.has(id));
+  const learnersFirst = learners.length > 0 ? `; the ${learners.length} in the learning batch first` : "";
   trace.log({
     agent: "Pipeline",
     action: "start",
-    output: `${fromErp.length} of ${vendorIds.length} ERP suppliers${typedIn}, ${concurrency} at a time`,
+    output: `${fromErp.length} of ${vendorIds.length} ERP suppliers${typedIn}, ${concurrency} at a time${learnersFirst}`,
     target: "Scout",
   });
 
@@ -132,30 +140,27 @@ export async function verify(
         output: describeResolution(resolution),
         target: judged ? "Judge" : "Decision",
       });
-      const { check, reasons, model } = await judge(judgeChat, evidence, resolution, (problem) => {
-        trace.log({
-          agent: "Judge",
-          action: "critique",
-          output: `${problem.message}; asking the model again`,
-          status: "needs_revision",
-        });
+      const judgment = await judge(judgeChat, evidence, resolution, {
+        rules: ruleSmith.promoted(),
+        onRevision: (problem) => {
+          trace.log({
+            agent: "Judge",
+            action: "critique",
+            output: `${problem.message}; asking the model again`,
+            status: "needs_revision",
+          });
+        },
       });
-      if (judged) {
-        const verdicts = Object.entries(reasons).map(([field, reason]) => `${field}: ${reason}`);
-        const scores = check.identity === "clear" ? check.facts.flatMap((fact) => fact.judgeScore ?? []) : [];
-        trace.log({
-          agent: "Judge",
-          action: "judge_facts",
-          output: verdicts.join(" ") || "no fact needed the model",
-          target: "Decision",
-          model,
-          ...(scores.length > 0 && { confidence: Math.min(...scores) / policy.decision.maxJudgeScore }),
-        });
+      const { check, reasons, model, rules } = judgment;
+      if (judged) trace.log(describeJudgment(judgment));
+      if (learning.has(vendorId) && check.identity === "clear") {
+        ruleSmith.remember(vendorId, evidence, resolution, check.facts);
       }
+      for (const rule of judgment.contradicted) ruleSmith.demote(rule, vendorId);
       const outcome = decide(check);
       const actions = outcome.actions.map(describeAction);
       trace.log({ agent: "Decision", action: "decide", output: [outcome.decision, ...actions].join("; ") });
-      return { vendorId, ...outcome, reasons, model };
+      return { vendorId, ...outcome, reasons, model, rules };
     } catch (error) {
       if (!(error instanceof AppError)) throw error;
       const output = `${errorText(error)}; reported in its place while the run continues`;
@@ -164,9 +169,44 @@ export async function verify(
     }
   }
 
-  const results = await inParallel(selected, concurrency, (id) => trace.forSupplier(id, () => verifyOne(id)));
+  const run = (ids: string[]) =>
+    inParallel(ids, concurrency, (id) => trace.forSupplier(id, () => verifyOne(id)));
+  const first = await run(learners);
+  if (first.length > 0) {
+    trace.log({
+      agent: "Pipeline",
+      action: "learn",
+      output: `${first.length} learning suppliers verified`,
+      target: "Rule Smith",
+    });
+    ruleSmith.learn();
+  }
+  const rest = await run(selected.filter((id) => !learning.has(id)));
+  const byId = new Map([...first, ...rest].map((result) => [result.vendorId, result]));
+  const results = selected.flatMap((id) => byId.get(id) ?? []);
   trace.log({ agent: "Pipeline", action: "finish", output: tally(results) });
-  return results;
+  return { suppliers: results, rules: ruleSmith.reports() };
+}
+
+function describeJudgment({ check, reasons, model, rules }: Awaited<ReturnType<typeof judge>>): Step {
+  if (rules.length > 0) {
+    return {
+      agent: "Judge",
+      action: "apply_rules",
+      output: `learned rules settled every fact, so the model was not asked: ${rules.join(", ")}`,
+      target: "Decision",
+    };
+  }
+  const verdicts = Object.entries(reasons).map(([field, reason]) => `${field}: ${reason}`);
+  const scores = check.identity === "clear" ? check.facts.flatMap((fact) => fact.judgeScore ?? []) : [];
+  return {
+    agent: "Judge",
+    action: "judge_facts",
+    output: verdicts.join(" ") || "no fact needed the model",
+    target: "Decision",
+    model,
+    ...(scores.length > 0 && { confidence: Math.min(...scores) / policy.decision.maxJudgeScore }),
+  };
 }
 
 // How many suppliers each decision went to, and how many failed: "11 escalate, 16 fix, 4 ready".

@@ -8,7 +8,7 @@
       "V-1001: correct lei to \"VGRQXHF3J8VDLUA7XE92\" from GLEIF",
       "V-1001: escalate: the sources disagree on sic",
       "V-1015: escalate: the LEI registration status is LAPSED",
-      "V-1031: escalate: the supplier matches more than one legal entity"
+      "V-1031: escalate: the Resolver could not settle on one legal entity"
     ],
     "suppliers": [
       {
@@ -45,7 +45,8 @@
           "lei": "GLEIF provides LEI 'VGRQXHF3J8VDLUA7XE92' which exactly matches the accepted LEI.",
           "sic": "ERP and EDGAR both list SIC 3570 matching the accepted code, while company_dns indicates no entry for 3570, confirming the code is not in that industry list."
         },
-        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+        "model": "nvidia/nemotron-3-ultra-550b-a55b",
+        "rules": []
       },
       {
         "vendorId": "V-1015",
@@ -70,7 +71,8 @@
           "name": "Both ERP and GLEIF provide the exact legal name 'Mitsubishi Caterpillar Forklift America Inc.' which matches the accepted value.",
           "lei": "Both ERP and GLEIF provide the LEI '549300QFGGPU2T3O6Y49' which exactly matches the accepted value."
         },
-        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+        "model": "nvidia/nemotron-3-ultra-550b-a55b",
+        "rules": []
       },
       {
         "vendorId": "V-1031",
@@ -79,11 +81,12 @@
         "actions": [
           {
             "kind": "escalate",
-            "reason": "the supplier matches more than one legal entity"
+            "reason": "the Resolver could not settle on one legal entity"
           }
         ],
         "reasons": {},
-        "model": null
+        "model": null,
+        "rules": []
       }
     ],
     "evaluation": {
@@ -95,6 +98,11 @@
         "correct": 2,
         "total": 2
       }
+    },
+    "learning": {
+      "rules": [],
+      "suppliers_judged_by_model": 2,
+      "suppliers_settled_by_rules": 0
     }
   },
   "agents": [
@@ -108,14 +116,18 @@
     },
     {
       "name": "Judge",
-      "role": "Asks NVIDIA Nemotron through Meterless Nightshift which registry values state the ERP's facts"
+      "role": "Asks NVIDIA Nemotron through Meterless Nightshift which registry values state the ERP's facts, unless rules the Rule Smith promoted settle them"
+    },
+    {
+      "name": "Rule Smith",
+      "role": "Remembers the Judge's verdicts on the learning batch in Meterless H-MEM, dreams over them, and promotes the SQL rules Zetaris checks that the Judge confirmed every time; demotes a rule the Judge later overturns"
     },
     {
       "name": "Decision",
       "role": "Turns the verdicts into ready, fix or escalate under a fixed policy"
     }
   ],
-  "trace_id": "trace-example-2",
-  "log_file": "logs/trace-example-2.jsonl",
-  "execution_time_seconds": 42.315
+  "trace_id": "trace-example-2-dde289f6",
+  "log_file": "logs/trace-example-2-dde289f6.jsonl",
+  "execution_time_seconds": 47.407
 }

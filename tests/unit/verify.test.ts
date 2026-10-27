@@ -44,7 +44,12 @@ function run(
   const { trace, events } = testTrace();
   const chat = () => Promise.reject(new Error("no fact here needs the model"));
   return {
-    results: verify({ zetaris, chat, secUserAgent: "Provenance test@example.com" }, trace, requested, typed),
+    results: verify(
+      { zetaris, chat, secUserAgent: "Provenance test@example.com" },
+      trace,
+      requested,
+      typed,
+    ).then(({ suppliers }) => suppliers),
     events,
   };
 }
@@ -86,7 +91,8 @@ describe("Pipeline", () => {
   });
 
   it("stops on a failure that is not an AppError, since it is a bug, and starts no further supplier", async () => {
-    const { zetaris, started } = fakeZetaris({ "V-4": new TypeError("bug") });
+    const lastOfFirstWave = vendorIds[policy.pipeline.concurrency - 1] ?? "";
+    const { zetaris, started } = fakeZetaris({ [lastOfFirstWave]: new TypeError("bug") });
 
     await expect(run(zetaris).results).rejects.toThrow("bug");
     await new Promise((resolve) => setTimeout(resolve, 30));

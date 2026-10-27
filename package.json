@@ -5,6 +5,10 @@
   "description": "Supplier-verification agents that turn their proven judgments into Zetaris data-quality rules. Open Agent Hackathon 2026, Track 1.",
   "type": "module",
   "imports": {
+    "#hmem": {
+      "types": "./app/types/hmem.d.ts",
+      "default": "./app/engines/hmem/src/index.ts"
+    },
     "#world-model": {
       "types": "./app/types/world-model.d.ts",
       "default": "./app/engines/world-model/src/index.ts"

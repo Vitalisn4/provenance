@@ -446,7 +446,7 @@
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_2549004xtx9ux53wo914 g ON true\nWHERE e.vendor_id = 'V-1003'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_2549004xtx9ux53wo914 g ON true\nWHERE e.vendor_id = 'V-1003'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -460,7 +460,10 @@
         "gleif_country",
         "gleif_jurisdiction",
         "gleif_registrationStatus",
-        "gleif_entityStatus"
+        "gleif_entityStatus",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record"
       ],
       "rows": [
         [
@@ -476,11 +479,14 @@
           "CM",
           "CM",
           "ISSUED",
-          "ACTIVE"
+          "ACTIVE",
+          "true",
+          "true",
+          "true"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_5299008lsfrcsqjpmo62 g ON true\nWHERE e.vendor_id = 'V-1002'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_5299008lsfrcsqjpmo62 g ON true\nWHERE e.vendor_id = 'V-1002'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -494,7 +500,10 @@
         "gleif_country",
         "gleif_jurisdiction",
         "gleif_registrationStatus",
-        "gleif_entityStatus"
+        "gleif_entityStatus",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record"
       ],
       "rows": [
         [
@@ -510,11 +519,14 @@
           "SE",
           "SE",
           "ISSUED",
-          "ACTIVE"
+          "ACTIVE",
+          "false",
+          "true",
+          "true"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_549300idu9wro0nmra62 g ON true\nWHERE e.vendor_id = 'V-1012'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_549300idu9wro0nmra62 g ON true\nWHERE e.vendor_id = 'V-1012'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -528,7 +540,10 @@
         "gleif_country",
         "gleif_jurisdiction",
         "gleif_registrationStatus",
-        "gleif_entityStatus"
+        "gleif_entityStatus",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record"
       ],
       "rows": [
         [
@@ -544,11 +559,14 @@
           "DK",
           "DK",
           "LAPSED",
-          "ACTIVE"
+          "ACTIVE",
+          "true",
+          "true",
+          "true"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_549300qfggpu2t3o6y49 g ON true\nWHERE e.vendor_id = 'V-1015'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_549300qfggpu2t3o6y49 g ON true\nWHERE e.vendor_id = 'V-1015'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -562,7 +580,10 @@
         "gleif_country",
         "gleif_jurisdiction",
         "gleif_registrationStatus",
-        "gleif_entityStatus"
+        "gleif_entityStatus",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record"
       ],
       "rows": [
         [
@@ -578,11 +599,14 @@
           "US",
           "US-DE",
           "LAPSED",
-          "ACTIVE"
+          "ACTIVE",
+          "true",
+          "true",
+          "true"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_549300rw8r22bjxy6f44 g ON true\nWHERE e.vendor_id = 'V-1016'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_549300rw8r22bjxy6f44 g ON true\nWHERE e.vendor_id = 'V-1016'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -596,7 +620,10 @@
         "gleif_country",
         "gleif_jurisdiction",
         "gleif_registrationStatus",
-        "gleif_entityStatus"
+        "gleif_entityStatus",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record"
       ],
       "rows": [
         [
@@ -612,11 +639,14 @@
           "US",
           "US-DE",
           "LAPSED",
-          "ACTIVE"
+          "ACTIVE",
+          "true",
+          "true",
+          "true"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_549300x0t62b72fu6q21 g ON true\nWHERE e.vendor_id = 'V-1013'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_549300x0t62b72fu6q21 g ON true\nWHERE e.vendor_id = 'V-1013'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -630,7 +660,10 @@
         "gleif_country",
         "gleif_jurisdiction",
         "gleif_registrationStatus",
-        "gleif_entityStatus"
+        "gleif_entityStatus",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record"
       ],
       "rows": [
         [
@@ -646,11 +679,14 @@
           "US",
           "US-DE",
           "LAPSED",
-          "ACTIVE"
+          "ACTIVE",
+          "true",
+          "true",
+          "true"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_n1ujq4ijg4sh8i5slv06 g ON true\nWHERE e.vendor_id = 'V-1014'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_n1ujq4ijg4sh8i5slv06 g ON true\nWHERE e.vendor_id = 'V-1014'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -664,7 +700,10 @@
         "gleif_country",
         "gleif_jurisdiction",
         "gleif_registrationStatus",
-        "gleif_entityStatus"
+        "gleif_entityStatus",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record"
       ],
       "rows": [
         [
@@ -680,11 +719,14 @@
           "US",
           "US-DE",
           "LAPSED",
-          "ACTIVE"
+          "ACTIVE",
+          "true",
+          "true",
+          "true"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_254900h5xmh7xwwgm795 g ON true\nLEFT JOIN prov_sec.edgar_0001341439 s ON true\nWHERE e.vendor_id = 'V-1008'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record, (e.claimed_sic = s.sic AND l.codes[s.sic] IS NOT NULL) AS rule_sic_is_listed_edgar_code, (s.sic IS NOT NULL AND l.codes[s.sic] IS NULL) AS rule_sic_missing_from_list\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_254900h5xmh7xwwgm795 g ON true\nLEFT JOIN prov_sec.edgar_0001341439 s ON true\nWHERE e.vendor_id = 'V-1008'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -705,7 +747,12 @@
         "edgar_sicDescription",
         "edgar_stateOfIncorporation",
         "edgar_city",
-        "edgar_sicListDescription"
+        "edgar_sicListDescription",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record",
+        "rule_sic_is_listed_edgar_code",
+        "rule_sic_missing_from_list"
       ],
       "rows": [
         [
@@ -728,11 +775,16 @@
           "Services-Prepackaged Software",
           "",
           "AUSTIN",
-          "Prepackaged Software"
+          "Prepackaged Software",
+          "false",
+          "true",
+          "true",
+          "true",
+          "false"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_2572ibtt8cczw6au4141 g ON true\nLEFT JOIN prov_sec.edgar_0000080424 s ON true\nWHERE e.vendor_id = 'V-1005'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record, (e.claimed_sic = s.sic AND l.codes[s.sic] IS NOT NULL) AS rule_sic_is_listed_edgar_code, (s.sic IS NOT NULL AND l.codes[s.sic] IS NULL) AS rule_sic_missing_from_list\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_2572ibtt8cczw6au4141 g ON true\nLEFT JOIN prov_sec.edgar_0000080424 s ON true\nWHERE e.vendor_id = 'V-1005'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -753,7 +805,12 @@
         "edgar_sicDescription",
         "edgar_stateOfIncorporation",
         "edgar_city",
-        "edgar_sicListDescription"
+        "edgar_sicListDescription",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record",
+        "rule_sic_is_listed_edgar_code",
+        "rule_sic_missing_from_list"
       ],
       "rows": [
         [
@@ -776,11 +833,16 @@
           "Soap, Detergents, Cleang Preparations, Perfumes, Cosmetics",
           "OH",
           "CINCINNATI",
-          null
+          null,
+          "true",
+          "true",
+          "true",
+          "false",
+          "true"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_335800e7d8teyezoh405 g ON true\nLEFT JOIN prov_sec.edgar_0000789019 s ON true\nWHERE e.vendor_id = 'V-1011'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record, (e.claimed_sic = s.sic AND l.codes[s.sic] IS NOT NULL) AS rule_sic_is_listed_edgar_code, (s.sic IS NOT NULL AND l.codes[s.sic] IS NULL) AS rule_sic_missing_from_list\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_335800e7d8teyezoh405 g ON true\nLEFT JOIN prov_sec.edgar_0000789019 s ON true\nWHERE e.vendor_id = 'V-1011'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -801,7 +863,12 @@
         "edgar_sicDescription",
         "edgar_stateOfIncorporation",
         "edgar_city",
-        "edgar_sicListDescription"
+        "edgar_sicListDescription",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record",
+        "rule_sic_is_listed_edgar_code",
+        "rule_sic_missing_from_list"
       ],
       "rows": [
         [
@@ -824,11 +891,16 @@
           "Services-Prepackaged Software",
           "WA",
           "REDMOND",
-          "Prepackaged Software"
+          "Prepackaged Software",
+          "false",
+          "true",
+          "true",
+          "true",
+          "false"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_529900d6bf99lw9r2e68 g ON true\nLEFT JOIN prov_sec.edgar_0001000184 s ON true\nWHERE e.vendor_id = 'V-1027'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record, (e.claimed_sic = s.sic AND l.codes[s.sic] IS NOT NULL) AS rule_sic_is_listed_edgar_code, (s.sic IS NOT NULL AND l.codes[s.sic] IS NULL) AS rule_sic_missing_from_list\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_529900d6bf99lw9r2e68 g ON true\nLEFT JOIN prov_sec.edgar_0001000184 s ON true\nWHERE e.vendor_id = 'V-1027'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -849,7 +921,12 @@
         "edgar_sicDescription",
         "edgar_stateOfIncorporation",
         "edgar_city",
-        "edgar_sicListDescription"
+        "edgar_sicListDescription",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record",
+        "rule_sic_is_listed_edgar_code",
+        "rule_sic_missing_from_list"
       ],
       "rows": [
         [
@@ -872,11 +949,16 @@
           "Services-Prepackaged Software",
           "2M",
           "WALLDORF",
-          "Prepackaged Software"
+          "Prepackaged Software",
+          "true",
+          "true",
+          "true",
+          "true",
+          "false"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_549300a0jprwg1ki7u06 g ON true\nLEFT JOIN prov_sec.edgar_0000924613 s ON true\nWHERE e.vendor_id = 'V-1029'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record, (e.claimed_sic = s.sic AND l.codes[s.sic] IS NOT NULL) AS rule_sic_is_listed_edgar_code, (s.sic IS NOT NULL AND l.codes[s.sic] IS NULL) AS rule_sic_missing_from_list\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_549300a0jprwg1ki7u06 g ON true\nLEFT JOIN prov_sec.edgar_0000924613 s ON true\nWHERE e.vendor_id = 'V-1029'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -897,7 +979,12 @@
         "edgar_sicDescription",
         "edgar_stateOfIncorporation",
         "edgar_city",
-        "edgar_sicListDescription"
+        "edgar_sicListDescription",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record",
+        "rule_sic_is_listed_edgar_code",
+        "rule_sic_missing_from_list"
       ],
       "rows": [
         [
@@ -920,11 +1007,16 @@
           "Radio & Tv Broadcasting & Communications Equipment",
           "H9",
           "ESPOO FINLAND",
-          "Radio and Television Broadcasting and Communications Equipment"
+          "Radio and Television Broadcasting and Communications Equipment",
+          "true",
+          "true",
+          "true",
+          "true",
+          "false"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_549300lkfj962mz46593 g ON true\nLEFT JOIN prov_sec.edgar_0000858877 s ON true\nWHERE e.vendor_id = 'V-1004'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record, (e.claimed_sic = s.sic AND l.codes[s.sic] IS NOT NULL) AS rule_sic_is_listed_edgar_code, (s.sic IS NOT NULL AND l.codes[s.sic] IS NULL) AS rule_sic_missing_from_list\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_549300lkfj962mz46593 g ON true\nLEFT JOIN prov_sec.edgar_0000858877 s ON true\nWHERE e.vendor_id = 'V-1004'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -945,7 +1037,12 @@
         "edgar_sicDescription",
         "edgar_stateOfIncorporation",
         "edgar_city",
-        "edgar_sicListDescription"
+        "edgar_sicListDescription",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record",
+        "rule_sic_is_listed_edgar_code",
+        "rule_sic_missing_from_list"
       ],
       "rows": [
         [
@@ -968,11 +1065,16 @@
           "Computer Communications Equipment",
           "DE",
           "SAN JOSE",
-          null
+          null,
+          "true",
+          "true",
+          "true",
+          "false",
+          "true"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_549300rism2sh22cg297 g ON true\nLEFT JOIN prov_sec.edgar_0000050863 s ON true\nWHERE e.vendor_id = 'V-1009'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record, (e.claimed_sic = s.sic AND l.codes[s.sic] IS NOT NULL) AS rule_sic_is_listed_edgar_code, (s.sic IS NOT NULL AND l.codes[s.sic] IS NULL) AS rule_sic_missing_from_list\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_549300rism2sh22cg297 g ON true\nLEFT JOIN prov_sec.edgar_0000050863 s ON true\nWHERE e.vendor_id = 'V-1009'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -993,7 +1095,12 @@
         "edgar_sicDescription",
         "edgar_stateOfIncorporation",
         "edgar_city",
-        "edgar_sicListDescription"
+        "edgar_sicListDescription",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record",
+        "rule_sic_is_listed_edgar_code",
+        "rule_sic_missing_from_list"
       ],
       "rows": [
         [
@@ -1016,11 +1123,16 @@
           "Semiconductors & Related Devices",
           "DE",
           "SANTA CLARA",
-          "Semiconductors and Related Devices"
+          "Semiconductors and Related Devices",
+          "false",
+          "true",
+          "true",
+          "true",
+          "false"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_549300zgwe2vqhzwvw14 g ON true\nLEFT JOIN prov_sec.edgar_0000037996 s ON true\nWHERE e.vendor_id = 'V-1010'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record, (e.claimed_sic = s.sic AND l.codes[s.sic] IS NOT NULL) AS rule_sic_is_listed_edgar_code, (s.sic IS NOT NULL AND l.codes[s.sic] IS NULL) AS rule_sic_missing_from_list\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_549300zgwe2vqhzwvw14 g ON true\nLEFT JOIN prov_sec.edgar_0000037996 s ON true\nWHERE e.vendor_id = 'V-1010'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -1041,7 +1153,12 @@
         "edgar_sicDescription",
         "edgar_stateOfIncorporation",
         "edgar_city",
-        "edgar_sicListDescription"
+        "edgar_sicListDescription",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record",
+        "rule_sic_is_listed_edgar_code",
+        "rule_sic_missing_from_list"
       ],
       "rows": [
         [
@@ -1064,11 +1181,16 @@
           "Motor Vehicles & Passenger Car Bodies",
           "DE",
           "DEARBORN",
-          "Motor Vehicles and Passenger Car Bodies"
+          "Motor Vehicles and Passenger Car Bodies",
+          "false",
+          "true",
+          "true",
+          "true",
+          "false"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_d01lmjzu09ullncy6z23 g ON true\nLEFT JOIN prov_sec.edgar_0001090727 s ON true\nWHERE e.vendor_id = 'V-1007'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record, (e.claimed_sic = s.sic AND l.codes[s.sic] IS NOT NULL) AS rule_sic_is_listed_edgar_code, (s.sic IS NOT NULL AND l.codes[s.sic] IS NULL) AS rule_sic_missing_from_list\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_d01lmjzu09ullncy6z23 g ON true\nLEFT JOIN prov_sec.edgar_0001090727 s ON true\nWHERE e.vendor_id = 'V-1007'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -1089,7 +1211,12 @@
         "edgar_sicDescription",
         "edgar_stateOfIncorporation",
         "edgar_city",
-        "edgar_sicListDescription"
+        "edgar_sicListDescription",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record",
+        "rule_sic_is_listed_edgar_code",
+        "rule_sic_missing_from_list"
       ],
       "rows": [
         [
@@ -1112,11 +1239,16 @@
           "Trucking & Courier Services (No Air)",
           "DE",
           "ATLANTA",
-          null
+          null,
+          "true",
+          "true",
+          "true",
+          "false",
+          "true"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_h1fje8h61jgm1jsgm897 g ON true\nLEFT JOIN prov_sec.edgar_0000313216 s ON true\nWHERE e.vendor_id = 'V-1020'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record, (e.claimed_sic = s.sic AND l.codes[s.sic] IS NOT NULL) AS rule_sic_is_listed_edgar_code, (s.sic IS NOT NULL AND l.codes[s.sic] IS NULL) AS rule_sic_missing_from_list\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_h1fje8h61jgm1jsgm897 g ON true\nLEFT JOIN prov_sec.edgar_0000313216 s ON true\nWHERE e.vendor_id = 'V-1020'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -1137,7 +1269,12 @@
         "edgar_sicDescription",
         "edgar_stateOfIncorporation",
         "edgar_city",
-        "edgar_sicListDescription"
+        "edgar_sicListDescription",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record",
+        "rule_sic_is_listed_edgar_code",
+        "rule_sic_missing_from_list"
       ],
       "rows": [
         [
@@ -1160,11 +1297,16 @@
           "X-Ray Apparatus & Tubes & Related Irradiation Apparatus",
           "P7",
           "AMSTERDAM",
-          "X-Ray Apparatus and Tubes and Related Irradiation Apparatus"
+          "X-Ray Apparatus and Tubes and Related Irradiation Apparatus",
+          "false",
+          "false",
+          "true",
+          "true",
+          "false"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_hwupkr0mpou8fgxbt394 g ON true\nLEFT JOIN prov_sec.edgar_0000320193 s ON true\nWHERE e.vendor_id = 'V-1028'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record, (e.claimed_sic = s.sic AND l.codes[s.sic] IS NOT NULL) AS rule_sic_is_listed_edgar_code, (s.sic IS NOT NULL AND l.codes[s.sic] IS NULL) AS rule_sic_missing_from_list\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_hwupkr0mpou8fgxbt394 g ON true\nLEFT JOIN prov_sec.edgar_0000320193 s ON true\nWHERE e.vendor_id = 'V-1028'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -1185,7 +1327,12 @@
         "edgar_sicDescription",
         "edgar_stateOfIncorporation",
         "edgar_city",
-        "edgar_sicListDescription"
+        "edgar_sicListDescription",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record",
+        "rule_sic_is_listed_edgar_code",
+        "rule_sic_missing_from_list"
       ],
       "rows": [
         [
@@ -1208,11 +1355,16 @@
           "Electronic Computers",
           "CA",
           "CUPERTINO",
-          "Electronic Computers"
+          "Electronic Computers",
+          "true",
+          "true",
+          "true",
+          "true",
+          "false"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_isrpg12pn4eieoemw547 g ON true\nLEFT JOIN prov_sec.edgar_0000773840 s ON true\nWHERE e.vendor_id = 'V-1019'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record, (e.claimed_sic = s.sic AND l.codes[s.sic] IS NOT NULL) AS rule_sic_is_listed_edgar_code, (s.sic IS NOT NULL AND l.codes[s.sic] IS NULL) AS rule_sic_missing_from_list\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_isrpg12pn4eieoemw547 g ON true\nLEFT JOIN prov_sec.edgar_0000773840 s ON true\nWHERE e.vendor_id = 'V-1019'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -1233,7 +1385,12 @@
         "edgar_sicDescription",
         "edgar_stateOfIncorporation",
         "edgar_city",
-        "edgar_sicListDescription"
+        "edgar_sicListDescription",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record",
+        "rule_sic_is_listed_edgar_code",
+        "rule_sic_missing_from_list"
       ],
       "rows": [
         [
@@ -1256,11 +1413,16 @@
           "Aircraft Engines & Engine Parts",
           "DE",
           "CHARLOTTE",
-          "Aircraft Engines and Engine Parts"
+          "Aircraft Engines and Engine Parts",
+          "false",
+          "true",
+          "true",
+          "true",
+          "false"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_pwftng3ei0y73oxwdh08 g ON true\nLEFT JOIN prov_sec.edgar_0000315189 s ON true\nWHERE e.vendor_id = 'V-1018'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record, (e.claimed_sic = s.sic AND l.codes[s.sic] IS NOT NULL) AS rule_sic_is_listed_edgar_code, (s.sic IS NOT NULL AND l.codes[s.sic] IS NULL) AS rule_sic_missing_from_list\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_pwftng3ei0y73oxwdh08 g ON true\nLEFT JOIN prov_sec.edgar_0000315189 s ON true\nWHERE e.vendor_id = 'V-1018'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -1281,7 +1443,12 @@
         "edgar_sicDescription",
         "edgar_stateOfIncorporation",
         "edgar_city",
-        "edgar_sicListDescription"
+        "edgar_sicListDescription",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record",
+        "rule_sic_is_listed_edgar_code",
+        "rule_sic_missing_from_list"
       ],
       "rows": [
         [
@@ -1304,11 +1471,16 @@
           "Farm Machinery & Equipment",
           "DE",
           "MOLINE",
-          "Farm Machinery and Equipment"
+          "Farm Machinery and Equipment",
+          "false",
+          "false",
+          "true",
+          "true",
+          "false"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_whkxqacz14c5xro8lw03 g ON true\nLEFT JOIN prov_sec.edgar_0000047217 s ON true\nWHERE e.vendor_id = 'V-1006'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record, (e.claimed_sic = s.sic AND l.codes[s.sic] IS NOT NULL) AS rule_sic_is_listed_edgar_code, (s.sic IS NOT NULL AND l.codes[s.sic] IS NULL) AS rule_sic_missing_from_list\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_whkxqacz14c5xro8lw03 g ON true\nLEFT JOIN prov_sec.edgar_0000047217 s ON true\nWHERE e.vendor_id = 'V-1006'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -1329,7 +1501,12 @@
         "edgar_sicDescription",
         "edgar_stateOfIncorporation",
         "edgar_city",
-        "edgar_sicListDescription"
+        "edgar_sicListDescription",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record",
+        "rule_sic_is_listed_edgar_code",
+        "rule_sic_missing_from_list"
       ],
       "rows": [
         [
@@ -1352,11 +1529,16 @@
           "Computer & office Equipment",
           "DE",
           "PALO ALTO",
-          null
+          null,
+          "true",
+          "true",
+          "true",
+          "false",
+          "true"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_wrjr7gs4gtrecrrtvx92 g ON true\nLEFT JOIN prov_sec.edgar_0000018230 s ON true\nWHERE e.vendor_id = 'V-1017'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record, (e.claimed_sic = s.sic AND l.codes[s.sic] IS NOT NULL) AS rule_sic_is_listed_edgar_code, (s.sic IS NOT NULL AND l.codes[s.sic] IS NULL) AS rule_sic_missing_from_list\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_wrjr7gs4gtrecrrtvx92 g ON true\nLEFT JOIN prov_sec.edgar_0000018230 s ON true\nWHERE e.vendor_id = 'V-1017'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -1377,7 +1559,12 @@
         "edgar_sicDescription",
         "edgar_stateOfIncorporation",
         "edgar_city",
-        "edgar_sicListDescription"
+        "edgar_sicListDescription",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record",
+        "rule_sic_is_listed_edgar_code",
+        "rule_sic_missing_from_list"
       ],
       "rows": [
         [
@@ -1400,11 +1587,16 @@
           "Construction Machinery & Equip",
           "DE",
           "IRVING",
-          "Construction Machinery and Equipment"
+          "Construction Machinery and Equipment",
+          "false",
+          "false",
+          "true",
+          "true",
+          "false"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_y87794h0us1r65vbxu25 g ON true\nLEFT JOIN prov_sec.edgar_0000104169 s ON true\nWHERE e.vendor_id = 'V-1021'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, g.data.attributes.lei AS gleif_lei, g.data.attributes.entity.legalName.name AS gleif_legalName, g.data.attributes.entity.legalAddress.country AS gleif_country, g.data.attributes.entity.jurisdiction AS gleif_jurisdiction, g.data.attributes.registration.status AS gleif_registrationStatus, g.data.attributes.entity.status AS gleif_entityStatus, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription, (regexp_replace(upper(e.vendor_name), '[^A-Z0-9]', '') = regexp_replace(upper(g.data.attributes.entity.legalName.name), '[^A-Z0-9]', '')) AS rule_name_is_gleif_legal_name, (split(upper(e.vendor_name), ' ')[0] = split(upper(g.data.attributes.entity.legalName.name), ' ')[0]) AS rule_name_shares_first_word, (e.claimed_lei = g.data.attributes.lei) AS rule_lei_is_claimed_record, (e.claimed_sic = s.sic AND l.codes[s.sic] IS NOT NULL) AS rule_sic_is_listed_edgar_code, (s.sic IS NOT NULL AND l.codes[s.sic] IS NULL) AS rule_sic_missing_from_list\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_gleif.lei_y87794h0us1r65vbxu25 g ON true\nLEFT JOIN prov_sec.edgar_0000104169 s ON true\nWHERE e.vendor_id = 'V-1021'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -1425,7 +1617,12 @@
         "edgar_sicDescription",
         "edgar_stateOfIncorporation",
         "edgar_city",
-        "edgar_sicListDescription"
+        "edgar_sicListDescription",
+        "rule_name_is_gleif_legal_name",
+        "rule_name_shares_first_word",
+        "rule_lei_is_claimed_record",
+        "rule_sic_is_listed_edgar_code",
+        "rule_sic_missing_from_list"
       ],
       "rows": [
         [
@@ -1448,11 +1645,16 @@
           "Retail-Variety Stores",
           "DE",
           "BENTONVILLE",
-          "Variety Stores"
+          "Variety Stores",
+          "false",
+          "false",
+          "true",
+          "true",
+          "false"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription\nFROM (SELECT CAST(unbase64('aW5wdXQ6MQ==') AS STRING) AS vendor_id, CAST(unbase64('QXBwbGUgSW5jLg==') AS STRING) AS vendor_name, CAST(unbase64('VVM=') AS STRING) AS country, CAST(NULL AS STRING) AS claimed_lei, CAST(unbase64('MzIwMTkz') AS STRING) AS claimed_cik, CAST(unbase64('MzU3MQ==') AS STRING) AS claimed_sic) e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_sec.edgar_0000320193 s ON true": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription, (e.claimed_sic = s.sic AND l.codes[s.sic] IS NOT NULL) AS rule_sic_is_listed_edgar_code, (s.sic IS NOT NULL AND l.codes[s.sic] IS NULL) AS rule_sic_missing_from_list\nFROM (SELECT CAST(unbase64('aW5wdXQ6MQ==') AS STRING) AS vendor_id, CAST(unbase64('QXBwbGUgSW5jLg==') AS STRING) AS vendor_name, CAST(unbase64('VVM=') AS STRING) AS country, CAST(NULL AS STRING) AS claimed_lei, CAST(unbase64('MzIwMTkz') AS STRING) AS claimed_cik, CAST(unbase64('MzU3MQ==') AS STRING) AS claimed_sic) e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_sec.edgar_0000320193 s ON true": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -1467,7 +1669,9 @@
         "edgar_sicDescription",
         "edgar_stateOfIncorporation",
         "edgar_city",
-        "edgar_sicListDescription"
+        "edgar_sicListDescription",
+        "rule_sic_is_listed_edgar_code",
+        "rule_sic_missing_from_list"
       ],
       "rows": [
         [
@@ -1484,11 +1688,13 @@
           "Electronic Computers",
           "CA",
           "CUPERTINO",
-          "Electronic Computers"
+          "Electronic Computers",
+          "true",
+          "false"
         ]
       ]
     },
-    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_sec.edgar_0000051143 s ON true\nWHERE e.vendor_id = 'V-1001'": {
+    "SELECT e.vendor_id AS erp_vendorId, e.vendor_name AS erp_name, e.country AS erp_country, e.claimed_lei AS erp_lei, e.claimed_cik AS erp_cik, e.claimed_sic AS erp_sic, l.codes[e.claimed_sic] AS erp_sicListDescription, s.cik AS edgar_cik, s.name AS edgar_name, s.sic AS edgar_sic, s.sicDescription AS edgar_sicDescription, s.stateOfIncorporation AS edgar_stateOfIncorporation, s.addresses.business.city AS edgar_city, l.codes[s.sic] AS edgar_sicListDescription, (e.claimed_sic = s.sic AND l.codes[s.sic] IS NOT NULL) AS rule_sic_is_listed_edgar_code, (s.sic IS NOT NULL AND l.codes[s.sic] IS NULL) AS rule_sic_missing_from_list\nFROM prov_erp.vendor_master e\nLEFT JOIN (SELECT map_from_entries(collect_list(struct(sic_code, description))) AS codes FROM prov.sic_codes) l ON true\nLEFT JOIN prov_sec.edgar_0000051143 s ON true\nWHERE e.vendor_id = 'V-1001'": {
       "columns": [
         "erp_vendorId",
         "erp_name",
@@ -1503,7 +1709,9 @@
         "edgar_sicDescription",
         "edgar_stateOfIncorporation",
         "edgar_city",
-        "edgar_sicListDescription"
+        "edgar_sicListDescription",
+        "rule_sic_is_listed_edgar_code",
+        "rule_sic_missing_from_list"
       ],
       "rows": [
         [
@@ -1520,7 +1728,9 @@
           "Computer & office Equipment",
           "NY",
           "ARMONK",
-          null
+          null,
+          "false",
+          "true"
         ]
       ]
     },

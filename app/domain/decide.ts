@@ -12,7 +12,7 @@ export function decide(check: SupplierCheck): {
     return {
       decision: "escalate",
       facts: [],
-      actions: [escalate("the supplier matches more than one legal entity")],
+      actions: [escalate("the Resolver could not settle on one legal entity")],
     };
   }
 
@@ -30,7 +30,7 @@ export function decide(check: SupplierCheck): {
   return { decision, facts: verdicts.map(({ field, status }) => ({ field, status })), actions };
 }
 
-function judgeFact({ field, claimed, registries, accepted, judgeScore }: Fact): {
+function judgeFact({ field, claimed, registries, accepted, judgeScore, rule }: Fact): {
   field: string;
   status: FactStatus;
   action?: Action;
@@ -48,10 +48,11 @@ function judgeFact({ field, claimed, registries, accepted, judgeScore }: Fact): 
   const status = claimed?.agrees === false ? "conflicting" : agreeing >= 2 ? "confirmed" : "unverified";
   const { minJudgeScore, maxJudgeScore } = policy.decision;
   if (
-    judgeScore === null ||
-    !Number.isInteger(judgeScore) ||
-    judgeScore < minJudgeScore ||
-    judgeScore > maxJudgeScore
+    rule === undefined &&
+    (judgeScore === null ||
+      !Number.isInteger(judgeScore) ||
+      judgeScore < minJudgeScore ||
+      judgeScore > maxJudgeScore)
   ) {
     return {
       field,

@@ -3,6 +3,7 @@ import { quotable } from "../adapters/sqlScript.ts";
 import type { ZetarisClient } from "../adapters/zetaris.ts";
 import { AppError } from "../domain/errors.ts";
 import { isValidLei } from "../domain/lei.ts";
+import { ruleLibrary } from "./rules.ts";
 
 // Each field's SQL expression in the evidence query. `sicListDescription` is the company_dns description of the
 // record's SIC code, null when the list lacks the code.
@@ -41,12 +42,14 @@ const sicList =
 type Fields<T> = Record<keyof T, string | null>;
 
 // What the registries say about one supplier's claimed identifiers, read in one query. A null registry record
-// means there is none to show: the ERP has no identifier for that registry, or `gaps` says why.
+// means there is none to show: the ERP has no identifier for that registry, or `gaps` says why. `rules` are
+// the library rules that held for the supplier in that query.
 export interface Evidence {
   erp: Fields<typeof erpFields>;
   gleif: Fields<typeof gleifFields> | null;
   edgar: Fields<typeof edgarFields> | null;
   gaps: string[];
+  rules: string[];
 }
 
 // A supplier typed into a request rather than read from the ERP, with the ERP's fields.
@@ -178,11 +181,13 @@ export async function openScout(
     const gaps: string[] = [];
     const gleif = await gleifTable(lei, gaps);
     const edgar = await edgarTable(cik, gaps);
+    const rules = ruleLibrary.filter((rule) => (rule.needs === "gleif" ? gleif : edgar));
     const sql = [
       `SELECT ${[
         ...select("erp", erpFields),
         ...(gleif ? select("gleif", gleifFields) : []),
         ...(edgar ? select("edgar", edgarFields) : []),
+        ...rules.map(({ id, sql }) => `(${sql}) AS rule_${id}`),
       ].join(", ")}`,
       `FROM ${from}`,
       sicList,
@@ -206,6 +211,7 @@ export async function openScout(
       gleif: gleif ? read("gleif", gleifFields, cells) : null,
       edgar: edgar ? read("edgar", edgarFields, cells) : null,
       gaps,
+      rules: rules.filter(({ id }) => cells.get(`rule_${id}`) === "true").map(({ id }) => id),
     };
   }
 

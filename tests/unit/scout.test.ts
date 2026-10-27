@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { ruleLibrary } from "../../app/agents/rules.ts";
 import { openScout } from "../../app/agents/scout.ts";
 import { AppError } from "../../app/domain/errors.ts";
 import { failure } from "./failure.ts";
@@ -34,7 +35,7 @@ function fakeZetaris({
       };
     }
     if (sql.startsWith("CREATE")) return create(sql);
-    return evidence([...sql.matchAll(/ AS ((?:erp|gleif|edgar)_\w+)/g)].map((match) => match[1] ?? ""));
+    return evidence([...sql.matchAll(/ AS ((?:erp|gleif|edgar|rule)_\w+)/g)].map((match) => match[1] ?? ""));
   };
   const query = vi.fn((sql: string) => Promise.resolve().then(() => respond(sql)));
   const execute = vi.fn((sql: string) => Promise.resolve().then(() => respond(sql)));
@@ -75,6 +76,33 @@ describe("Scout", () => {
     expect(sql).toContain("LEFT JOIN prov_gleif.lei_vgrqxhf3j8vdlua7xe92 g ON true");
     expect(sql).toContain("LEFT JOIN prov_sec.edgar_0000051143 s ON true");
     expect(sql).toMatch(/WHERE e\.vendor_id = 'V-1'$/);
+  });
+
+  it("has Zetaris check the library rules each supplier's registry records allow, in the evidence query", async () => {
+    const values: Record<string, string | null> = {
+      rule_name_is_gleif_legal_name: "true",
+      rule_lei_is_claimed_record: "false",
+      rule_sic_is_listed_edgar_code: null,
+    };
+    const { zetaris, evidenceSql } = fakeZetaris({
+      erp: [
+        ["V-1", lei, "51143"],
+        ["V-2", lei, null],
+      ],
+      evidence: (columns) => ({
+        columns,
+        rows: [columns.map((column) => (Object.hasOwn(values, column) ? (values[column] ?? null) : column))],
+      }),
+    });
+    const { gather } = await openScout(zetaris, userAgent);
+
+    expect((await gather("V-1")).rules).toEqual(["name_is_gleif_legal_name"]);
+    const name = ruleLibrary.find(({ id }) => id === "name_is_gleif_legal_name");
+    expect(evidenceSql()).toContain(`(${name?.sql ?? ""}) AS rule_name_is_gleif_legal_name`);
+    expect(evidenceSql()).toContain("AS rule_sic_missing_from_list");
+    await gather("V-2");
+    expect(evidenceSql()).toContain("AS rule_lei_is_claimed_record");
+    expect(evidenceSql()).not.toContain("AS rule_sic");
   });
 
   it("reuses the tables Zetaris already has", async () => {

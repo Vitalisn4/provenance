@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readRecording, recorder, replayer } from "../../app/adapters/sample.ts";
-import { readAnswerKey, score } from "../../app/evaluation/score.ts";
+import { learningBatch, readAnswerKey, score } from "../../app/evaluation/score.ts";
 import { verify } from "../../app/pipeline/verify.ts";
 import { failure } from "./failure.ts";
 import { testTrace } from "./testTrace.ts";
@@ -41,6 +41,18 @@ describe("Sample mode", () => {
     await expect(replay.chat("deep", user("judge"))).resolves.toMatchObject({ content: "judge 2" });
   });
 
+  it("keeps the replies an earlier recording has for a request, and asks the model for the rest", async () => {
+    const { zetaris, chat } = live();
+    const earlier = recorder(zetaris, chat);
+    await earlier.chat("deep", user("judge"));
+
+    const again = recorder(zetaris, chat, earlier.recording.nightshift);
+    await expect(again.chat("deep", user("judge"))).resolves.toMatchObject({ content: "judge 1" });
+    await expect(again.chat("deep", user("judge"))).resolves.toMatchObject({ content: "judge 2" });
+    await expect(again.chat("deep", user("other"))).resolves.toMatchObject({ content: "other 3" });
+    expect(Object.values(again.recording.nightshift).flat()).toHaveLength(3);
+  });
+
   it("refuses a request the recording lacks, and never records a CREATE", async () => {
     const { zetaris, chat } = live();
     const recording = recorder(zetaris, chat);
@@ -60,15 +72,30 @@ describe("Sample mode", () => {
     }
   });
 
-  it("replays the recorded demo run offline and decides every supplier as the answer key does", async () => {
-    const results = await verify(
+  it("replays the recorded demo run offline, learns rules from the learning batch, and decides every supplier as the answer key does", async () => {
+    const key = readAnswerKey();
+    const { suppliers: results, rules } = await verify(
       { ...replayer(readRecording()), secUserAgent: "Provenance test" },
       testTrace().trace,
       [],
+      [],
+      learningBatch(key),
     );
 
-    const { suppliers } = score(results, readAnswerKey());
+    const { suppliers } = score(results, key);
     expect(suppliers.filter((supplier) => !supplier.correct)).toEqual([]);
-    expect(suppliers).toHaveLength(Object.keys(readAnswerKey().suppliers).length);
+    expect(suppliers).toHaveLength(Object.keys(key.suppliers).length);
+    expect(rules.map(({ id, status }) => `${id} ${status}`)).toEqual([
+      "name_is_gleif_legal_name promoted",
+      "name_shares_first_word rejected",
+      "lei_is_claimed_record promoted",
+      "sic_is_listed_edgar_code promoted",
+      "sic_missing_from_list promoted",
+    ]);
+    const settled = results.flatMap((result) =>
+      "rules" in result && result.rules.length > 0 ? [result.vendorId] : [],
+    );
+    expect(settled).toEqual(["V-1003", "V-1006", "V-1007", "V-1015", "V-1016"]);
+    expect(settled.every((vendorId) => key.suppliers[vendorId]?.batch === "held_out")).toBe(true);
   });
 });

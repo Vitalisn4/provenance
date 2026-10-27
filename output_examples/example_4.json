@@ -39,7 +39,8 @@
           "lei": "GLEIF provides the LEI 'HWUPKR0MPOU8FGXBT394' which exactly matches the accepted value.",
           "sic": "ERP and EDGAR both list SIC 3571 matching the accepted code, and company_dns confirms industry description 'Electronic Computers' for that code."
         },
-        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+        "model": "nvidia/nemotron-3-ultra-550b-a55b",
+        "rules": []
       },
       {
         "vendorId": "input:2",
@@ -64,12 +65,18 @@
         ],
         "reasons": {
           "name": "ERP value 'Nestlé S.A.' matches the accepted legal name 'NESTLÉ S.A.' with only case differences, and GLEIF confirms the exact name.",
-          "lei": "GLEIF provides the LEI 'KY37LUS27QQX7BB93L28' which exactly matches the accepted value."
+          "lei": "GLEIF provides LEI 'KY37LUS27QQX7BB93L28' which exactly matches the accepted LEI."
         },
-        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+        "model": "nvidia/nemotron-3-ultra-550b-a55b",
+        "rules": []
       }
     ],
-    "evaluation": {}
+    "evaluation": {},
+    "learning": {
+      "rules": [],
+      "suppliers_judged_by_model": 2,
+      "suppliers_settled_by_rules": 0
+    }
   },
   "agents": [
     {
@@ -82,14 +89,18 @@
     },
     {
       "name": "Judge",
-      "role": "Asks NVIDIA Nemotron through Meterless Nightshift which registry values state the ERP's facts"
+      "role": "Asks NVIDIA Nemotron through Meterless Nightshift which registry values state the ERP's facts, unless rules the Rule Smith promoted settle them"
+    },
+    {
+      "name": "Rule Smith",
+      "role": "Remembers the Judge's verdicts on the learning batch in Meterless H-MEM, dreams over them, and promotes the SQL rules Zetaris checks that the Judge confirmed every time; demotes a rule the Judge later overturns"
     },
     {
       "name": "Decision",
       "role": "Turns the verdicts into ready, fix or escalate under a fixed policy"
     }
   ],
-  "trace_id": "trace-example-4",
-  "log_file": "logs/trace-example-4.jsonl",
-  "execution_time_seconds": 24.436
+  "trace_id": "trace-example-4-85c0e657",
+  "log_file": "logs/trace-example-4-85c0e657.jsonl",
+  "execution_time_seconds": 20.857
 }

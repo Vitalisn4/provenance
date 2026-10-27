@@ -8,7 +8,7 @@ import { policy } from "../config/policy.ts";
 import { AppError, errorText } from "../domain/errors.ts";
 
 // `target` is the agent the step hands the supplier to, and `confidence` runs from 0 to 1.
-interface Step {
+export interface Step {
   agent: string;
   action: string;
   input?: string;
