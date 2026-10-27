@@ -3,6 +3,8 @@
   "description": "Supplier-verification agents that turn their own proven judgments into SQL rules Zetaris enforces.",
   "track": "Solving Fragmented Intelligence",
   "repository": "https://github.com/Vitalisn4/provenance",
+  "demo_video": "https://youtu.be/Q8WehL0p6-c",
+  "slides": "docs/Provenance-deck.pdf",
   "entry_point": {
     "command": "npm start",
     "docker": "docker run --rm -p 8000:8000 -p 8001:8001 -e SAMPLE_MODE=true provenance",

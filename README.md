@@ -7,6 +7,9 @@
 > **Sponsor technology:** Zetaris (data layer), Meterless World Model and H-MEM engines, Meterless Nightshift
 > (only AI provider), NVIDIA Nemotron 3 Ultra, built in Cursor.
 >
+> **Demo video (3:42):** <https://youtu.be/Q8WehL0p6-c> · **Slides:**
+> [docs/Provenance-deck.pdf](docs/Provenance-deck.pdf)
+>
 > **Run it with only Docker installed:** `docker build -t provenance .` then
 > `docker run --rm -p 8000:8000 -p 8001:8001 -e SAMPLE_MODE=true provenance`, then open
 > <http://localhost:8001> or `curl -X POST localhost:8000/run -d @input_examples/example_3.json`.
@@ -196,6 +199,8 @@ other database or registry client.
   typed-in supplier therefore works live, not just the ERP's.
 - One **federated query per supplier** joins the ERP row, its GLEIF record, its EDGAR filing and the SIC list,
   and computes every learned rule as a column. Zetaris is where the rules run.
+- **What it saved us:** the app has no GLEIF or EDGAR client, no join code across four sources and no rule
+  engine. Zetaris fetches, caches and joins the registries, and the learned rules are columns in that query.
 
 **Meterless engines (two, both in working features, both passing the official conformance suites).**
 
@@ -213,7 +218,7 @@ other database or registry client.
 **Meterless Nightshift (the only AI provider).** Every model call goes to Nightshift's OpenAI-format
 `/v1/chat/completions` with the Runtime token, `meterless-app: provenance` and `meterless-scope: user`, on the
 `meterless/deep` route. The app follows Nightshift's Runtime 1.4 provider contract: URL normalisation, status
-from `/v1/models` (`npm run meterless:check`), a 180 s timeout, retries on 429 after 2, 4 and 8 s, and
+from `/v1/models` (`npm run meterless:check`), a 90 s timeout, retries on 429 after 2, 4 and 8 s, and
 Nightshift's own error message and `fix` steps surfaced to the user. The app holds no NVIDIA key; it lives in
 Nightshift's Providers tab.
 
@@ -221,11 +226,22 @@ Nightshift's Providers tab.
 (`nvidia/nemotron-3-ultra-550b-a55b`), pinned to Nightshift's deep lane: it separates "same fact, different
 words" (Corp = Corporation, an English filing name) from real conflicts, and scores its own verdicts. Every
 model request is logged with the model that answered, taken from Nightshift's response, both in the trace
-(`"model": "nvidia/nemotron-3-ultra-550b-a55b"`) and in each supplier's result. The fast lane is pinned to
-Nemotron 3.5 Lightning and checked by `npm run meterless:check`; no agent needs it yet.
+(`"model": "nvidia/nemotron-3-ultra-550b-a55b"`) and in each supplier's result. `npm run meterless:check` also
+sends one request on the fast lane and prints the model that answered it; no agent uses that lane.
 
-**Cursor.** Provenance was built in Cursor with its agent, in reviewed slices: each change was type-checked,
-linted, tested, mutation-tested against its new logic, run live, and reviewed before it was committed.
+**Cursor (with Space XAI).** Provenance was built in Cursor with its coding agent, in small slices planned in
+chat and reviewed before each commit:
+
+- **Against the real services.** The agent worked out the Zetaris Lightning SQL the app relies on (REST tables
+  over GLEIF and EDGAR, `SHOW LIGHTNING TABLES` before `CREATE`, JSON paths into the records) by running it
+  against the local Zetaris with `npm run sql`, and checked Nightshift's provider contract with
+  `npm run meterless:check`, so the adapters match what the services do rather than what we guessed.
+- **Tests first-class.** It wrote the unit tests, wired in both official Meterless conformance suites, and
+  mutation-tested each new piece of logic; `npm run check` passed before every commit.
+- **The analyst page.** It checked the page in Cursor's browser, including keyboard use and a phone-sized
+  screen, and fixed the review comments on each pull request.
+- **Our part.** We set the design, reviewed and tested every change, and merged through pull requests. Secrets
+  stayed in local environment files that were never printed or committed.
 
 **What was unique.** The agents **distil their own judgments into governed SQL**. The model's verdicts are not
 just answers: H-MEM remembers them, the Rule Smith turns the patterns they confirm into SQL that Zetaris runs
@@ -279,10 +295,11 @@ result as the live run. On a live server, a single request can ask for sample mo
 - **Zetaris** running locally: follow "Install Zetaris locally" in the Participant Setup Guide. You need its REST
   URL, org ID and an API key.
 - **Meterless Nightshift**: install it as in the Participant Setup Guide, add NVIDIA in its **Providers** tab with
-  your NVIDIA API key, and pin the deep lane to Nemotron 3 Ultra (`nemotron-3-ultra-550b-a55b`) and the fast lane
-  to Nemotron 3.5 Lightning. Copy the **Runtime token** from its Console. Nightshift runs on Windows or macOS;
-  from Linux, reach a Nightshift on another machine through an SSH tunnel to `127.0.0.1:8088`
+  your NVIDIA API key, and pin the deep lane to Nemotron 3 Ultra (`nemotron-3-ultra-550b-a55b`); the app uses
+  only the deep lane. Copy the **Runtime token** from its Console. Nightshift runs on Windows or macOS; from
+  Linux, reach a Nightshift on another machine through an SSH tunnel to `127.0.0.1:8088`
   (`ssh -N -L 8088:127.0.0.1:8088 <host>`), which is how this project was built.
+- **No Google Colab.** The agents run in the Node process (or its Docker container); there are no notebooks.
 
 ### Steps
 
@@ -511,7 +528,7 @@ is kilobytes; nothing is downloaded in bulk. To regenerate the sample: run live,
 | Situation                              | Behaviour                                                                                        |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Zetaris times out or answers 5xx       | 60 s timeout per request, 2 retries after 0.5 s and 1 s, then the supplier is reported as failed |
-| Nightshift rate-limits (429) or fails  | 180 s timeout, retries after 2, 4 and 8 s, then the supplier is reported as failed               |
+| Nightshift rate-limits (429) or fails  | 90 s timeout, retries after 2, 4 and 8 s, then the supplier is reported as failed                |
 | Nightshift rejects the token           | No retry; the error says where the Runtime token comes from                                      |
 | The model's reply is incomplete        | Logged as a critique and asked once more, then the supplier is reported as failed                |
 | A Zetaris result reaches its row limit | Treated as an error rather than silently truncated data                                          |
@@ -573,5 +590,6 @@ zetaris/setup/     the SQL that registers the static sources in Zetaris
 input_examples/    four requests
 output_examples/   their live responses, traces, and example 3's H-MEM trust ledger
 tests/             unit tests and the official conformance suites
+docs/              the slide deck (Provenance-deck.pdf) and the analyst-page screenshot
 Dockerfile, docker-compose.yml, .env.example, metadata.json
 ```

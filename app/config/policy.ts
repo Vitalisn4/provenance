@@ -11,8 +11,9 @@ export const policy = {
     resultLimit: 10_000,
   },
   meterless: {
-    // Provider contract (Runtime 1.4): a chat call may take up to 180 s, because a model load can take minutes.
-    chatTimeoutMs: 180_000,
+    // Our choice, within the hackathon's suggested 30–90 s: over 186 live Nemotron 3 Ultra calls at two suppliers
+    // at a time the slowest took 69 s. A timeout is recoverable, so a slow call is retried rather than failed.
+    chatTimeoutMs: 90_000,
     // Our choice: a runtime that gives no status within 10 s counts as offline.
     statusTimeoutMs: 10_000,
     // Provider contract: a 429 is retried after 2, 4 and 8 s, then surfaces. Our choice: network failures and
