@@ -2,14 +2,14 @@ export type FactStatus = "confirmed" | "conflicting" | "unverified";
 
 export type Decision = "ready" | "fix" | "escalate";
 
-// `agrees` is the Judge's call that a value states the accepted fact, possibly in other words: EDGAR's city
-// "Armonk" and GLEIF's "North Castle" name the same place.
+// `agrees` says whether a value states the accepted fact, possibly in other words: the ERP's "Siemens A/S" and
+// GLEIF's "SIEMENS AKTIESELSKAB" name the same entity.
 interface SourceValue {
   value: string;
   agrees: boolean;
 }
 
-interface Evidence extends SourceValue {
+interface RegistryValue extends SourceValue {
   source: string;
 }
 
@@ -18,10 +18,10 @@ export interface Fact {
   field: string;
   // The ERP's value, or null when the field is blank.
   claimed: SourceValue | null;
-  registries: Evidence[];
-  // The value the Judge accepted, or null when the evidence let it accept none.
+  registries: RegistryValue[];
+  // The registry value the field is checked against, or null when no registry gives one.
   accepted: string | null;
-  // The Judge's rubric score out of 9, or null when no registry covers the field and so nothing was judged.
+  // The Judge's rubric score, or null when no registry covers the field and so nothing was judged.
   judgeScore: number | null;
 }
 

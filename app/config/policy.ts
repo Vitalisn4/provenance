@@ -23,6 +23,11 @@ export const policy = {
     // (Nemotron Ultra) the Judge and Rule Smith; each lane is pinned to its model in Nightshift's settings.
     routes: { fast: "meterless/fast", deep: "meterless/deep" },
   },
+  pipeline: {
+    // Technical Execution Guide, section 5: a full run should take 5-10 minutes. A Judge call takes about a
+    // minute, so the 31 demo suppliers run four at a time.
+    concurrency: 4,
+  },
   decision: {
     // Day 4 check-in deck: the Judge scores each verdict 0-3 on accuracy, appropriateness and actionability,
     // and a verdict below 7 of 9 goes to the analyst.

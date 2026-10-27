@@ -1,6 +1,7 @@
-// Scores a saved run, the JSON `npm run judge` prints, against the answer key: each batch's tally, then
+// Scores a saved run, the JSON `npm run verify` prints, against the answer key: each batch's tally, then
 // every supplier the run got wrong and why.
 import { readFileSync } from "node:fs";
+import { AppError } from "../domain/errors.ts";
 import { readAnswerKey, score, type RunResult } from "../evaluation/score.ts";
 import { runCli } from "./runCli.ts";
 
@@ -11,7 +12,8 @@ await runCli(([path]) => {
     return;
   }
   const results: unknown = JSON.parse(readFileSync(path, "utf8"));
-  if (!Array.isArray(results)) throw new Error(`${path} holds no list of supplier results`);
+  if (!Array.isArray(results))
+    throw new AppError("input", `${path} holds no list of supplier results`, false);
   const { suppliers, batches } = score(results as RunResult[], readAnswerKey());
 
   for (const [batch, { correct, total }] of Object.entries(batches)) {

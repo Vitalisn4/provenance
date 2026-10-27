@@ -35,16 +35,15 @@ function evidence(erp: Partial<Evidence["erp"]>, edgar: Partial<Evidence["edgar"
       ...edgar,
     },
     gaps: [],
-    sql: "",
   };
 }
 
 function clear(legalName: string, registrationStatus = "ISSUED"): Resolution {
   const entity = { lei, legalName, country: "US", registrationStatus, entityStatus: "ACTIVE" };
-  return { identity: "clear", entity, candidates: [], notes: [], sql: null };
+  return { identity: "clear", entity, candidates: [], notes: [] };
 }
 
-const unmatched: Resolution = { identity: "unmatched", candidates: [], notes: [], sql: null };
+const unmatched: Resolution = { identity: "unmatched", candidates: [], notes: [] };
 
 type Entry = Record<string, unknown>;
 
@@ -265,7 +264,7 @@ describe("Judge", () => {
 
   it("asks no model about an ambiguous identity", async () => {
     const fake = chat("");
-    const ambiguous: Resolution = { identity: "ambiguous", candidates: [], notes: [], sql: null };
+    const ambiguous: Resolution = { identity: "ambiguous", candidates: [], notes: [] };
 
     await expect(judge(fake, caterpillar, ambiguous)).resolves.toEqual({
       check: { identity: "ambiguous" },

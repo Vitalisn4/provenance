@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { AppError } from "../domain/errors.ts";
 import type { Action, Decision } from "../domain/types.ts";
 
 interface Issue {
@@ -19,7 +20,7 @@ export function readAnswerKey(): AnswerKey {
   ) as AnswerKey;
 }
 
-// One supplier's line of a run, as `npm run judge` prints it.
+// One supplier's line of a run, as `npm run verify` prints it.
 export type RunResult = { vendorId: string } & (
   { decision: Decision; actions: Action[] } | { error: string }
 );
@@ -50,8 +51,9 @@ export function score(
   const seen = new Set<string>();
   const suppliers = results.map((result) => {
     const labelled = key.suppliers[result.vendorId];
-    if (!labelled) throw new Error(`${result.vendorId} is not in the answer key`);
-    if (seen.has(result.vendorId)) throw new Error(`${result.vendorId} appears in the run twice`);
+    if (!labelled) throw new AppError("input", `${result.vendorId} is not in the answer key`, false);
+    if (seen.has(result.vendorId))
+      throw new AppError("input", `${result.vendorId} appears in the run twice`, false);
     seen.add(result.vendorId);
     const expected = labelled.issues.flatMap(({ field, correct }) =>
       field && correct ? [correction(field, correct)] : [],

@@ -3,7 +3,7 @@ import { decide, nameSimilarity, normalizeName } from "#world-model";
 import { restTables } from "../adapters/restTables.ts";
 import type { ZetarisClient } from "../adapters/zetaris.ts";
 import { AppError } from "../domain/errors.ts";
-import type { Evidence } from "./scout.ts";
+import { gleifAccept, type Evidence } from "./scout.ts";
 
 // Legal forms recognised as a name's last word, with their spellings. GLEIF keeps whichever spelling the
 // registrant used and its name filter matches whole words, so a search tries every spelling.
@@ -47,7 +47,6 @@ function parse(name: string): { base: string; form: string | null } {
   return form ? { base: all.slice(0, -1).join(" "), form } : { base: all.join(" "), form: null };
 }
 
-// Whether two names are the same words and legal form, written in any case, punctuation or spelling of the form.
 export function sameName(a: string, b: string): boolean {
   const [x, y] = [parse(a), parse(b)];
   return x.base === y.base && x.form === y.form;
@@ -73,9 +72,9 @@ interface Candidate {
 }
 
 // Which legal entity a supplier is: the one its claimed LEI names when that entity is active and in the
-// supplier's country, or else the one a complete GLEIF search for its name in that country finds. `candidates` are
-// the search's matches at or above the World Model's review band, best first, and `sql` is the query that read them.
-export type Resolution = { candidates: Candidate[]; notes: string[]; sql: string | null } & (
+// supplier's country, or else the one a complete GLEIF search for its name in that country finds. `candidates`
+// are the search's matches at or above the World Model's review band, best first.
+export type Resolution = { candidates: Candidate[]; notes: string[] } & (
   { identity: "clear"; entity: Entity } | { identity: "ambiguous" | "unmatched" }
 );
 
@@ -137,20 +136,23 @@ export function openResolver(zetaris: ZetarisClient): {
       : [stem.join(" ")];
     const searches = new Map<string, string>();
     for (const spelling of spellings) {
-      const url = searchUrl(spelling, country);
-      const table = `search_${createHash("sha256").update(url).digest("hex").slice(0, 16)}`;
-      const ddl = `CREATE LIGHTNING REST TABLE ${table} FROM PROV_GLEIF REQUEST(endpoint "${url}", method "get",
-        response_type "json", http_encoding "URLENCODED") HEADER (accept "application/vnd.api+json") BODY ()`;
-      if (await register("prov_gleif", table, ddl)) searches.set(table, spelling);
+      const endpoint = searchUrl(spelling, country);
+      const table = await register({
+        source: "PROV_GLEIF",
+        table: `search_${createHash("sha256").update(endpoint).digest("hex").slice(0, 16)}`,
+        endpoint,
+        header: gleifAccept,
+      });
+      if (table) searches.set(table, spelling);
       else notes.push(`GLEIF could not be searched for "${spelling}"`);
     }
-    if (searches.size === 0) return { found: [], sql: null, complete: false };
+    if (searches.size === 0) return { found: [], complete: false };
 
-    // Each row names its table, a hex digest and so safe as a literal, because UNION ALL keeps no order.
+    // UNION ALL keeps no order, so each row names its table: a source and a hex digest, safe as a literal.
     const sql = [...searches.keys()]
       .map(
         (table) =>
-          `SELECT '${table}' AS search, meta.pagination.total AS total, to_json(data) AS records FROM prov_gleif.${table}`,
+          `SELECT '${table}' AS search, meta.pagination.total AS total, to_json(data) AS records FROM ${table}`,
       )
       .join("\nUNION ALL\n");
     const found = new Map<string, Entity>();
@@ -165,7 +167,7 @@ export function openResolver(zetaris: ZetarisClient): {
       }
       for (const entity of page) found.set(entity.lei, entity);
     }
-    return { found: [...found.values()], sql, complete };
+    return { found: [...found.values()], complete };
   }
 
   async function resolve({ erp, gleif }: Evidence): Promise<Resolution> {
@@ -181,7 +183,7 @@ export function openResolver(zetaris: ZetarisClient): {
     ) {
       const { lei, legalName, country, registrationStatus, entityStatus } = gleif;
       const entity = { lei, legalName, country, registrationStatus, entityStatus };
-      return { identity: "clear", entity, candidates: [], notes, sql: null };
+      return { identity: "clear", entity, candidates: [], notes };
     }
     if (gleif?.lei) {
       notes.push(
@@ -192,11 +194,11 @@ export function openResolver(zetaris: ZetarisClient): {
     const { name, country } = erp;
     if (!name || !country || !/^[A-Z]{2}$/.test(country)) {
       notes.push("the ERP lacks the name or two-letter country a GLEIF search needs");
-      return { identity: "unmatched", candidates: [], notes, sql: null };
+      return { identity: "unmatched", candidates: [], notes };
     }
 
     const { form } = parse(name);
-    const { found, sql, complete } = await search(name, form, country, notes);
+    const { found, complete } = await search(name, form, country, notes);
     const candidates = found
       .filter((entity) => entity.entityStatus !== "INACTIVE")
       .map((entity) => ({ entity, similarity: similarity(name, entity.legalName) }))
@@ -206,23 +208,23 @@ export function openResolver(zetaris: ZetarisClient): {
 
     if (!complete) {
       notes.push("the search was incomplete, so it can neither settle on one entity nor rule all out");
-      return { identity: "ambiguous", candidates, notes, sql };
+      return { identity: "ambiguous", candidates, notes };
     }
     if (!best) {
       notes.push(`GLEIF has no active entity named like "${name}" in ${country}`);
-      return { identity: "unmatched", candidates, notes, sql };
+      return { identity: "unmatched", candidates, notes };
     }
     if (!form) {
       notes.push(`"${name}" has no legal form, so it names a brand rather than one legal entity`);
-      return { identity: "ambiguous", candidates, notes, sql };
+      return { identity: "ambiguous", candidates, notes };
     }
     if (rest.length === 0 && decide(best.similarity) === "auto-merge") {
-      return { identity: "clear", entity: best.entity, candidates, notes, sql };
+      return { identity: "clear", entity: best.entity, candidates, notes };
     }
     notes.push(
       `no candidate is a clear match for "${name}": ${candidates.length} scored, the closest ${best.similarity.toFixed(2)}`,
     );
-    return { identity: "ambiguous", candidates, notes, sql };
+    return { identity: "ambiguous", candidates, notes };
   }
 
   return { resolve };

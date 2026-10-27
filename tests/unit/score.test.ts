@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { AppError } from "../../app/domain/errors.ts";
 import { score, type AnswerKey, type RunResult } from "../../app/evaluation/score.ts";
 
 const key: AnswerKey = {
@@ -84,7 +85,18 @@ describe("score", () => {
   it("scores only the suppliers a run covers, and rejects one unlabelled or covered twice", () => {
     const ready: RunResult = { vendorId: "V-1", decision: "ready", actions: [] };
     expect(score([ready], key).batches).toEqual({ learning: { correct: 1, total: 1 } });
-    expect(() => score([{ ...ready, vendorId: "V-9" }], key)).toThrow("V-9 is not in the answer key");
-    expect(() => score([ready, ready], key)).toThrow("V-1 appears in the run twice");
+    const thrown = (results: RunResult[]) => {
+      try {
+        score(results, key);
+      } catch (error) {
+        return error;
+      }
+    };
+    expect(thrown([{ ...ready, vendorId: "V-9" }])).toStrictEqual(
+      new AppError("input", "V-9 is not in the answer key", false),
+    );
+    expect(thrown([ready, ready])).toStrictEqual(
+      new AppError("input", "V-1 appears in the run twice", false),
+    );
   });
 });

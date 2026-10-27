@@ -24,7 +24,7 @@ function fakeZetaris(pages: Record<string, Page> = {}) {
     const rows = [...sql.matchAll(/FROM prov_gleif\.(\w+)/g)].map(([, table = ""]) => {
       const page = pages[searched.get(table) ?? ""];
       const { total, records } = typeof page === "object" ? page : { total: 0, records: [] };
-      return [table, String(total), JSON.stringify(records)];
+      return [`prov_gleif.${table}`, String(total), JSON.stringify(records)];
     });
     return Promise.resolve({ columns: ["search", "total", "records"], rows });
   });
@@ -53,7 +53,6 @@ function evidence(name: string | null, country: string | null, gleif: Partial<Ev
     },
     edgar: null,
     gaps: [],
-    sql: "",
   };
 }
 
@@ -75,7 +74,6 @@ describe("Resolver", () => {
       },
       candidates: [],
       notes: [],
-      sql: null,
     });
     expect(query).not.toHaveBeenCalled();
     expect(execute).not.toHaveBeenCalled();
@@ -97,7 +95,7 @@ describe("Resolver", () => {
   });
 
   it("searches every spelling of the legal form when the claimed LEI is another country's entity", async () => {
-    const { zetaris, execute } = fakeZetaris({
+    const { zetaris, query, execute } = fakeZetaris({
       "Siemens AG": {
         total: 2,
         records: [record("L2", "Siemens Healthineers AG"), record("L3", "Siemens AG", "INACTIVE")],
@@ -127,10 +125,11 @@ describe("Resolver", () => {
       candidates: [{ entity: { lei: "L1" }, similarity: 1 }],
       notes: ["claimed LEI L9 is Siemens Aktieselskab in DK"],
     });
-    expect(resolution.sql).toMatch(
-      /^SELECT 'search_[0-9a-f]{16}' AS search, meta\.pagination\.total AS total, to_json\(data\) AS records FROM prov_gleif\.search_/,
+    const read = query.mock.calls.at(-1)?.[0] ?? "";
+    expect(read).toMatch(
+      /^SELECT 'prov_gleif\.search_[0-9a-f]{16}' AS search, meta\.pagination\.total AS total, to_json\(data\) AS records FROM prov_gleif\.search_/,
     );
-    expect(resolution.sql).toContain("\nUNION ALL\n");
+    expect(read).toContain("\nUNION ALL\n");
   });
 
   it("matches a legal form under any spelling and never across forms", async () => {
@@ -252,7 +251,6 @@ describe("Resolver", () => {
       identity: "ambiguous",
       candidates: [],
       notes: ['GLEIF could not be searched for "Kribi Logistics SARL"', incomplete],
-      sql: null,
     });
     expect(await resolve(evidence("Acme Ltd", "GB"))).toMatchObject({
       identity: "ambiguous",

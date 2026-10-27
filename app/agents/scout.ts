@@ -40,27 +40,16 @@ const sicList =
 
 type Fields<T> = Record<keyof T, string | null>;
 
-// What the registries say about one supplier's claimed identifiers, read by the one query in `sql`. A null
-// registry record means there is none to show: the ERP has no identifier for that registry, or `gaps` says why.
+// What the registries say about one supplier's claimed identifiers, read in one query. A null registry record
+// means there is none to show: the ERP has no identifier for that registry, or `gaps` says why.
 export interface Evidence {
   erp: Fields<typeof erpFields>;
   gleif: Fields<typeof gleifFields> | null;
   edgar: Fields<typeof edgarFields> | null;
   gaps: string[];
-  sql: string;
 }
 
-function gleifDdl(table: string, lei: string): string {
-  return `CREATE LIGHTNING REST TABLE ${table} FROM PROV_GLEIF REQUEST(
-    endpoint "https://api.gleif.org/api/v1/lei-records/${lei}", method "get", response_type "json",
-    http_encoding "URLENCODED") HEADER (accept "application/vnd.api+json") BODY ()`;
-}
-
-function edgarDdl(table: string, cik: string, userAgent: string): string {
-  return `CREATE LIGHTNING REST TABLE ${table} FROM PROV_SEC REQUEST(
-    endpoint "https://data.sec.gov/submissions/CIK${cik}.json", method "get", response_type "json",
-    http_encoding "URLENCODED") HEADER (user-agent "${userAgent}") BODY ()`;
-}
+export const gleifAccept = ["accept", "application/vnd.api+json"] as const;
 
 function select(prefix: string, fields: Record<string, string>): string[] {
   return Object.entries(fields).map(([key, expression]) => `${expression} AS ${prefix}_${key}`);
@@ -88,6 +77,7 @@ export async function openScout(
   zetaris: ZetarisClient,
   secUserAgent: string,
 ): Promise<{ vendorIds: string[]; gather: (vendorId: string) => Promise<Evidence> }> {
+  // Checked up front, so a bad setting stops the run before any supplier rather than failing each one.
   const userAgent = quotable("SEC_USER_AGENT", secUserAgent);
   const { register } = restTables(zetaris);
   const erp = await zetaris.query(
@@ -115,10 +105,14 @@ export async function openScout(
       gaps.push(`claimed LEI ${lei} is not a valid ISO 17442 LEI, so GLEIF was not queried`);
       return null;
     }
-    const table = `lei_${lei.toLowerCase()}`;
-    if (await register("prov_gleif", table, gleifDdl(table, lei))) return `prov_gleif.${table}`;
-    gaps.push(`GLEIF has no record of LEI ${lei}, or could not be reached`);
-    return null;
+    const table = await register({
+      source: "PROV_GLEIF",
+      table: `lei_${lei.toLowerCase()}`,
+      endpoint: `https://api.gleif.org/api/v1/lei-records/${lei}`,
+      header: gleifAccept,
+    });
+    if (!table) gaps.push(`GLEIF has no record of LEI ${lei}, or could not be reached`);
+    return table;
   }
 
   async function edgarTable(cik: string | null, gaps: string[]): Promise<string | null> {
@@ -128,10 +122,14 @@ export async function openScout(
       return null;
     }
     const padded = cik.padStart(10, "0");
-    const table = `edgar_${padded}`;
-    if (await register("prov_sec", table, edgarDdl(table, padded, userAgent))) return `prov_sec.${table}`;
-    gaps.push(`EDGAR has no filer with CIK ${cik}, or could not be reached`);
-    return null;
+    const table = await register({
+      source: "PROV_SEC",
+      table: `edgar_${padded}`,
+      endpoint: `https://data.sec.gov/submissions/CIK${padded}.json`,
+      header: ["user-agent", userAgent],
+    });
+    if (!table) gaps.push(`EDGAR has no filer with CIK ${cik}, or could not be reached`);
+    return table;
   }
 
   // Takes only a vendor ID, so the identifiers looked up and the ID in the SQL are always the ERP's own.
@@ -170,7 +168,6 @@ export async function openScout(
       gleif: gleif ? read("gleif", gleifFields, cells) : null,
       edgar: edgar ? read("edgar", edgarFields, cells) : null,
       gaps,
-      sql,
     };
   }
 

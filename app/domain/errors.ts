@@ -1,4 +1,4 @@
-export type ErrorType = "config" | "zetaris" | "meterless";
+export type ErrorType = "config" | "input" | "zetaris" | "meterless";
 
 export class AppError extends Error {
   constructor(
@@ -9,4 +9,8 @@ export class AppError extends Error {
   ) {
     super(message, options);
   }
+}
+
+export function errorText(error: AppError): string {
+  return `${error.type} error: ${error.message}`;
 }

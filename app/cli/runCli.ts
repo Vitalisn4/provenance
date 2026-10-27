@@ -1,8 +1,4 @@
-import { AppError } from "../domain/errors.ts";
-
-export function errorText(error: AppError): string {
-  return `${error.type} error: ${error.message}`;
-}
+import { AppError, errorText } from "../domain/errors.ts";
 
 export async function runCli(main: (args: string[]) => void | Promise<void>): Promise<void> {
   try {
