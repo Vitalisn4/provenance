@@ -30,6 +30,8 @@ export interface Trace {
 
 type Chat = MeterlessClient["chat"];
 
+export const count = (n: number, noun: string, plural = `${noun}s`) => `${n} ${n === 1 ? noun : plural}`;
+
 export function newRunId(now = new Date()): string {
   return `run-${now.toISOString().replace(/\D/g, "").slice(0, 14)}-${randomUUID().slice(0, 8)}`;
 }

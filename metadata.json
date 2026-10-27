@@ -1,0 +1,52 @@
+{
+  "project": "Provenance",
+  "description": "Supplier-verification agents that turn their own proven judgments into SQL rules Zetaris enforces.",
+  "track": "Solving Fragmented Intelligence",
+  "repository": "https://github.com/Vitalisn4/provenance",
+  "entry_point": {
+    "command": "npm start",
+    "docker": "docker run --rm -p 8000:8000 -e SAMPLE_MODE=true provenance",
+    "endpoint": "POST /run",
+    "port": 8000
+  },
+  "agents": ["Scout", "Resolver", "Judge", "Rule Smith", "Decision"],
+  "sponsor_technology": {
+    "zetaris": {
+      "role": "The only data layer: a Postgres ERP as a JDBC data source, GLEIF and SEC EDGAR records as REST tables the agents create at runtime, a cached company_dns SIC list, and one federated query per supplier that also evaluates the learned rules",
+      "where": ["app/adapters/zetaris.ts", "app/agents/scout.ts", "app/agents/resolver.ts", "zetaris/setup/"]
+    },
+    "meterless": {
+      "engines": [
+        {
+          "name": "World Model",
+          "feature": "Resolver entity matching: name normalisation, similarity and banding of GLEIF candidates",
+          "where": "app/agents/resolver.ts",
+          "test": "npm run conformance:world-model (8/8)"
+        },
+        {
+          "name": "H-MEM",
+          "feature": "Rule Smith: the Judge's verdicts as memories, dreaming, and the trust ledger of rule promotions and demotions",
+          "where": "app/agents/ruleSmith.ts",
+          "test": "npm run conformance:hmem (13/13)"
+        }
+      ],
+      "nightshift": {
+        "role": "The only AI provider: every model call, on the meterless/deep route, with the answering model logged per request",
+        "where": "app/adapters/meterless.ts"
+      }
+    },
+    "nvidia": {
+      "models": ["nvidia/nemotron-3-ultra-550b-a55b"],
+      "role": "Nemotron 3 Ultra, through Nightshift's deep lane, is the Judge: it rules on each fact and scores its verdicts",
+      "where": "app/agents/judge.ts"
+    },
+    "cursor": {
+      "role": "Built in Cursor with its agent, in reviewed, tested slices"
+    }
+  },
+  "pre_existing_components": [
+    "app/engines/hmem/src and app/engines/world-model/src: Meterless reference implementations (Apache-2.0), unchanged",
+    "tests/conformance: the official Meterless conformance suites",
+    "zetaris/setup/01_industry_codes.sql: adapted from zetaris/getting-started"
+  ]
+}

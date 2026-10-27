@@ -101,7 +101,7 @@ describe("Rule Smith", () => {
     const steps = events().map(
       ({ agent_name, action, output_summary }) => `${agent_name} ${action}: ${output_summary}`,
     );
-    expect(steps[0]).toMatch(/^Rule Smith dream: H-MEM dreamt \d+ clusters from 15 Judge verdicts$/);
+    expect(steps[0]).toBe("Rule Smith dream: H-MEM dreamt 1 cluster from 15 Judge verdicts");
     expect(steps).toContain(
       "Rule Smith back_test: name_is_gleif_legal_name promoted: held for 4 learning verdicts and the Judge confirmed every one",
     );
