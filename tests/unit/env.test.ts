@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { meterlessConfig, sampleMode, setupValues, zetarisConfig } from "../../app/config/env.ts";
+import { meterlessConfig, port, sampleMode, setupValues, zetarisConfig } from "../../app/config/env.ts";
 
 const zetaris = {
   ZETARIS_REST_URL: "http://localhost:8888/api/v1.0/",
@@ -81,5 +81,14 @@ describe("settings", () => {
     expect(
       [" TRUE ", "true", "false", "1", undefined].map((value) => sampleMode({ SAMPLE_MODE: value })),
     ).toEqual([true, true, false, false, false]);
+  });
+
+  it("serves on PORT, 8000 by default, and refuses a port that cannot exist", () => {
+    expect([undefined, " ", "8080", "65535", "1"].map((value) => port({ PORT: value }))).toEqual([
+      8000, 8000, 8080, 65535, 1,
+    ]);
+    for (const value of ["0", "65536", "80.5", "eighty"]) {
+      expect(() => port({ PORT: value })).toThrow("PORT must be a whole number from 1 to 65535");
+    }
   });
 });

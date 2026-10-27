@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
-import { appendFileSync, mkdirSync } from "node:fs";
+import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import type { MeterlessClient } from "../adapters/meterless.ts";
 import type { ZetarisClient } from "../adapters/zetaris.ts";
 import { policy } from "../config/policy.ts";
@@ -16,6 +16,7 @@ interface Step {
 }
 
 export interface Trace {
+  runId: string;
   file: string;
   log: (step: Step) => void;
   // Runs `work` with every step it logs attributed to the supplier, so concurrent suppliers stay apart.
@@ -44,6 +45,8 @@ export function openTrace(
   }
   mkdirSync(dir, { recursive: true });
   const file = `${dir}/trace-${runId}.jsonl`;
+  // A reused run ID, such as an example's, replaces the earlier run's trace rather than mixing into it.
+  writeFileSync(file, "");
   const supplier = new AsyncLocalStorage<string>();
   const masked = secrets.filter(Boolean);
   const mask = (text: string) =>
@@ -73,7 +76,7 @@ export function openTrace(
     out.write(`${line.filter(Boolean).join(" ").replace(/\s+/g, " ")}\n`);
   }
 
-  return { file, log, forSupplier: (vendorId, work) => supplier.run(vendorId, work) };
+  return { runId, file, log, forSupplier: (vendorId, work) => supplier.run(vendorId, work) };
 }
 
 async function observe<T>(

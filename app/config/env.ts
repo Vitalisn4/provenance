@@ -88,6 +88,14 @@ export function sampleMode(source: Source = loadEnv()): boolean {
   return source.SAMPLE_MODE?.trim().toLowerCase() === "true";
 }
 
+export function port(source: Source = loadEnv()): number {
+  const value = Number(source.PORT?.trim() || "8000");
+  if (!Number.isInteger(value) || value < 1 || value > 65535) {
+    throw new AppError("config", "PORT must be a whole number from 1 to 65535", false);
+  }
+  return value;
+}
+
 // SEC fair access requires every EDGAR request to name the app and a contact email.
 export function secUserAgent(source: Source = loadEnv()): string {
   return required(source, "SEC_USER_AGENT");

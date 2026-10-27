@@ -1,6 +1,9 @@
+import { mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { AppError } from "../../app/domain/errors.ts";
-import { newRunId, tracedChat, tracedZetaris } from "../../app/pipeline/trace.ts";
+import { newRunId, openTrace, tracedChat, tracedZetaris } from "../../app/pipeline/trace.ts";
 import { failure } from "./failure.ts";
 import { testTrace } from "./testTrace.ts";
 
@@ -49,6 +52,16 @@ describe("Trace", () => {
   it("refuses a run ID that could leave the logs directory", () => {
     expect(() => testTrace("../escape")).toThrow("run_id must be 1 to 64 letters, digits, _ or -");
     expect(newRunId(new Date("2026-10-27T15:30:12Z"))).toMatch(/^run-20261027153012-[0-9a-f]{8}$/);
+  });
+
+  it("replaces an earlier run's trace when a run ID is reused", () => {
+    const dir = mkdtempSync(join(tmpdir(), "trace-"));
+    const out = { write: () => true };
+    openTrace("example-1", { secrets: [], out, dir }).log({ agent: "Pipeline", action: "first", output: "" });
+    const again = openTrace("example-1", { secrets: [], out, dir });
+
+    expect(again).toMatchObject({ runId: "example-1", file: `${dir}/trace-example-1.jsonl` });
+    expect(readFileSync(again.file, "utf8")).toBe("");
   });
 
   it("logs each Zetaris statement with its row count, and a failure before passing it on", async () => {
