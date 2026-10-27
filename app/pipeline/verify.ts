@@ -26,13 +26,20 @@ export function selectSuppliers(requested: readonly string[], vendorIds: string[
   return requested.length === 0 ? vendorIds : vendorIds.filter((id) => requested.includes(id));
 }
 
-// Runs `work` on every item, at most `limit` at a time, and returns the results in the items' order.
+// Runs `work` on every item, at most `limit` at a time, and returns the results in the items' order. After a
+// failure no item starts, though items already running finish.
 async function inParallel<T, R>(items: T[], limit: number, work: (item: T) => Promise<R>): Promise<R[]> {
   const results: R[] = [];
   let next = 0;
+  let failed = false;
   async function worker(): Promise<void> {
-    for (let index = next++; index < items.length; index = next++) {
-      results[index] = await work(items[index] as T);
+    for (let index = next++; index < items.length && !failed; index = next++) {
+      try {
+        results[index] = await work(items[index] as T);
+      } catch (error) {
+        failed = true;
+        throw error;
+      }
     }
   }
   await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));

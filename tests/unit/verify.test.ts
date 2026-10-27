@@ -12,6 +12,7 @@ const vendorIds = ["V-1", "V-2", "V-3", "V-4", "V-5", "V-6"];
 function fakeZetaris(failures: Record<string, Error> = {}) {
   let running = 0;
   const peak = { value: 0 };
+  const started: string[] = [];
   async function query(sql: string) {
     if (sql.startsWith("SELECT vendor_id")) {
       return {
@@ -20,6 +21,7 @@ function fakeZetaris(failures: Record<string, Error> = {}) {
       };
     }
     const vendorId = /vendor_id = '([\w-]+)'/.exec(sql)?.[1] ?? "";
+    started.push(vendorId);
     running++;
     peak.value = Math.max(peak.value, running);
     await new Promise((resolve) => setTimeout(resolve, 2 * (vendorIds.length - vendorIds.indexOf(vendorId))));
@@ -29,7 +31,7 @@ function fakeZetaris(failures: Record<string, Error> = {}) {
     const columns = [...sql.matchAll(/ AS (erp_\w+)/g)].map((match) => match[1] ?? "");
     return { columns, rows: [columns.map((column) => (column === "erp_vendorId" ? vendorId : null))] };
   }
-  return { zetaris: { query, execute: query }, peak };
+  return { zetaris: { query, execute: query }, peak, started };
 }
 
 function run(zetaris: ReturnType<typeof fakeZetaris>["zetaris"], requested: string[] = []) {
@@ -77,10 +79,12 @@ describe("Pipeline", () => {
     expect(events().at(-1)?.output_summary).toBe("1 failed, 1 fix");
   });
 
-  it("stops on a failure that is not an AppError, since it is a bug rather than an outage", async () => {
-    const { zetaris } = fakeZetaris({ "V-1": new TypeError("bug") });
+  it("stops on a failure that is not an AppError, since it is a bug, and starts no further supplier", async () => {
+    const { zetaris, started } = fakeZetaris({ "V-4": new TypeError("bug") });
 
-    await expect(run(zetaris, ["V-1"]).results).rejects.toThrow("bug");
+    await expect(run(zetaris).results).rejects.toThrow("bug");
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(started).toEqual(vendorIds.slice(0, policy.pipeline.concurrency));
   });
 
   it("rejects a requested supplier the ERP does not have", async () => {
