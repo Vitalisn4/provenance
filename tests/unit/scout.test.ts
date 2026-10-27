@@ -123,18 +123,6 @@ describe("Scout", () => {
     expect(evidence.sql).not.toContain("prov_gleif");
   });
 
-  it("stops on any other failure to register a table", async () => {
-    const { zetaris } = fakeZetaris({
-      erp: [["V-1", lei, null]],
-      create: () => {
-        throw new AppError("zetaris", "Zetaris rejected the API key (401)", false);
-      },
-    });
-    const { gather } = await openScout(zetaris, userAgent);
-
-    expect((await failure(gather("V-1"))).message).toMatch(/401/);
-  });
-
   it("refuses a user agent or vendor ID that could alter the SQL", async () => {
     const quoted = await failure(openScout(fakeZetaris({ erp: [] }).zetaris, 'Provenance "x'));
     expect(quoted.type).toBe("config");
@@ -156,16 +144,6 @@ describe("Scout", () => {
       "Supplier V-2' OR '1'='1 is not in the ERP",
     );
     expect(execute).not.toHaveBeenCalled();
-  });
-
-  it("rejects a table listing without table names", async () => {
-    const { zetaris } = fakeZetaris({ erp: [] });
-    zetaris.query.mockResolvedValueOnce({ columns: [], rows: [] });
-    zetaris.query.mockResolvedValueOnce({ columns: ["table_type"], rows: [["rest"]] });
-
-    expect((await failure(openScout(zetaris, userAgent))).message).toBe(
-      "SHOW LIGHTNING TABLES prov_gleif returned no name column",
-    );
   });
 
   it("rejects an evidence result that is not one complete row", async () => {

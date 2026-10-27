@@ -1,3 +1,4 @@
+import { restTables } from "../adapters/restTables.ts";
 import { quotable } from "../adapters/sqlScript.ts";
 import type { ZetarisClient } from "../adapters/zetaris.ts";
 import { AppError } from "../domain/errors.ts";
@@ -41,17 +42,13 @@ type Fields<T> = Record<keyof T, string | null>;
 
 // What the registries say about one supplier's claimed identifiers, read by the one query in `sql`. A null
 // registry record means there is none to show: the ERP has no identifier for that registry, or `gaps` says why.
-interface Evidence {
+export interface Evidence {
   erp: Fields<typeof erpFields>;
   gleif: Fields<typeof gleifFields> | null;
   edgar: Fields<typeof edgarFields> | null;
   gaps: string[];
   sql: string;
 }
-
-// Zetaris fetches a REST table's source when the table is created, so a registry without the record (or one
-// that cannot be reached) fails the CREATE with this message and no table is left behind.
-const fetchFailed = "REST API call failed";
 
 function gleifDdl(table: string, lei: string): string {
   return `CREATE LIGHTNING REST TABLE ${table} FROM PROV_GLEIF REQUEST(
@@ -85,30 +82,17 @@ function read<T extends Record<string, string>>(
   ) as Fields<T>;
 }
 
-async function tableNames(zetaris: ZetarisClient, database: string): Promise<string[]> {
-  const { columns, rows } = await zetaris.query(`SHOW LIGHTNING TABLES ${database}`);
-  const name = columns.indexOf("name");
-  if (name < 0) {
-    throw new AppError("zetaris", `SHOW LIGHTNING TABLES ${database} returned no name column`, false);
-  }
-  return rows.map((row) => `${database}.${row[name] ?? ""}`);
-}
-
 // Registers the REST tables a supplier's claimed identifiers need, then reads the supplier's ERP row and
-// registry records in one query. Tables persist in Zetaris, so each identifier is fetched once across runs.
+// registry records in one query.
 export async function openScout(
   zetaris: ZetarisClient,
   secUserAgent: string,
 ): Promise<{ vendorIds: string[]; gather: (vendorId: string) => Promise<Evidence> }> {
   const userAgent = quotable("SEC_USER_AGENT", secUserAgent);
-  const [erp, gleifTables, edgarTables] = await Promise.all([
-    zetaris.query(
-      "SELECT vendor_id, claimed_lei, claimed_cik FROM prov_erp.vendor_master ORDER BY vendor_id",
-    ),
-    tableNames(zetaris, "prov_gleif"),
-    tableNames(zetaris, "prov_sec"),
-  ]);
-  const tables = new Set([...gleifTables, ...edgarTables]);
+  const { register } = restTables(zetaris);
+  const erp = await zetaris.query(
+    "SELECT vendor_id, claimed_lei, claimed_cik FROM prov_erp.vendor_master ORDER BY vendor_id",
+  );
 
   // A vendor ID goes into the evidence query as a string literal, so only characters that need no escaping
   // are accepted; Spark reads a backslash in a literal as an escape.
@@ -125,19 +109,6 @@ export async function openScout(
     }),
   );
 
-  // Creates the table unless it exists; false when the registry has no such record or cannot be reached.
-  async function register(name: string, ddl: string): Promise<boolean> {
-    if (tables.has(name)) return true;
-    try {
-      await zetaris.execute(ddl);
-    } catch (error) {
-      if (error instanceof AppError && error.message.includes(fetchFailed)) return false;
-      throw error;
-    }
-    tables.add(name);
-    return true;
-  }
-
   async function gleifTable(lei: string | null, gaps: string[]): Promise<string | null> {
     if (lei === null) return null;
     if (!isValidLei(lei)) {
@@ -145,7 +116,7 @@ export async function openScout(
       return null;
     }
     const table = `lei_${lei.toLowerCase()}`;
-    if (await register(`prov_gleif.${table}`, gleifDdl(table, lei))) return `prov_gleif.${table}`;
+    if (await register("prov_gleif", table, gleifDdl(table, lei))) return `prov_gleif.${table}`;
     gaps.push(`GLEIF has no record of LEI ${lei}, or could not be reached`);
     return null;
   }
@@ -158,7 +129,7 @@ export async function openScout(
     }
     const padded = cik.padStart(10, "0");
     const table = `edgar_${padded}`;
-    if (await register(`prov_sec.${table}`, edgarDdl(table, padded, userAgent))) return `prov_sec.${table}`;
+    if (await register("prov_sec", table, edgarDdl(table, padded, userAgent))) return `prov_sec.${table}`;
     gaps.push(`EDGAR has no filer with CIK ${cik}, or could not be reached`);
     return null;
   }
