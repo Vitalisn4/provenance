@@ -7,7 +7,7 @@ import type { Evidence } from "./scout.ts";
 
 // Legal forms recognised as a name's last word, with their spellings. GLEIF keeps whichever spelling the
 // registrant used and its name filter matches whole words, so a search tries every spelling.
-const legalForms: Record<string, string[]> = {
+export const legalForms: Readonly<Record<string, readonly string[]>> = {
   ab: ["AB", "Aktiebolag"],
   ag: ["AG", "Aktiengesellschaft"],
   as: ["A/S", "Aktieselskab"],
@@ -47,13 +47,19 @@ function parse(name: string): { base: string; form: string | null } {
   return form ? { base: all.slice(0, -1).join(" "), form } : { base: all.join(" "), form: null };
 }
 
+// Whether two names are the same words and legal form, written in any case, punctuation or spelling of the form.
+export function sameName(a: string, b: string): boolean {
+  const [x, y] = [parse(a), parse(b)];
+  return x.base === y.base && x.form === y.form;
+}
+
 // Two legal forms that differ name two different entities, however alike the rest of the names.
 function similarity(a: string, b: string): number {
   const [x, y] = [parse(a), parse(b)];
   return x.form && y.form && x.form !== y.form ? 0 : nameSimilarity(x.base, y.base);
 }
 
-interface Entity {
+export interface Entity {
   lei: string;
   legalName: string;
   country: string | null;
@@ -69,7 +75,7 @@ interface Candidate {
 // Which legal entity a supplier is: the one its claimed LEI names when that entity is active and in the
 // supplier's country, or else the one a complete GLEIF search for its name in that country finds. `candidates` are
 // the search's matches at or above the World Model's review band, best first, and `sql` is the query that read them.
-type Resolution = { candidates: Candidate[]; notes: string[]; sql: string | null } & (
+export type Resolution = { candidates: Candidate[]; notes: string[]; sql: string | null } & (
   { identity: "clear"; entity: Entity } | { identity: "ambiguous" | "unmatched" }
 );
 

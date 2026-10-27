@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { openResolver } from "../../app/agents/resolver.ts";
+import { openResolver, sameName } from "../../app/agents/resolver.ts";
 import type { Evidence } from "../../app/agents/scout.ts";
 import { AppError } from "../../app/domain/errors.ts";
 import { failure } from "./failure.ts";
@@ -156,6 +156,13 @@ describe("Resolver", () => {
       identity: "clear",
       entity: { lei: "L3" },
     });
+  });
+
+  it("knows a name under any spelling of its legal form, and nothing else as the same name", () => {
+    expect(sameName("Siemens A/S", "SIEMENS AKTIESELSKAB")).toBe(true);
+    expect(sameName("Cisco Systems,Inc.", "CISCO SYSTEMS INC")).toBe(true);
+    expect(sameName("Siemens AG", "Siemens AB")).toBe(false);
+    expect(sameName("Caterpiller Inc", "CATERPILLAR INC.")).toBe(false);
   });
 
   it("counts an entity found under two spellings once", async () => {

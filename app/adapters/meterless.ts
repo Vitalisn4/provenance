@@ -37,6 +37,8 @@ function refusal(status: number, body: unknown): AppError {
   );
 }
 
+export type MeterlessClient = ReturnType<typeof createMeterlessClient>;
+
 export function createMeterlessClient(config: MeterlessConfig, deps: Dependencies = defaultDependencies) {
   const service = { type: "meterless", name: "Nightshift", baseUrl: config.baseUrl } as const;
   const headers = { Authorization: `Bearer ${config.runtimeToken}`, "meterless-app": APP_NAME };

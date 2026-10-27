@@ -28,5 +28,7 @@ export const policy = {
     // and a verdict below 7 of 9 goes to the analyst.
     minJudgeScore: 7,
     maxJudgeScore: 9,
+    // Our choice: a Judge reply without a complete verdict is asked for once more, then surfaces.
+    judgeAttempts: 2,
   },
 } as const;
