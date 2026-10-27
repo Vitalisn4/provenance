@@ -1,7 +1,13 @@
 import { policy } from "../config/policy.ts";
 import type { MeterlessConfig } from "../config/env.ts";
 import { AppError } from "../domain/errors.ts";
-import { defaultDependencies, requestJson, withRetries, type Dependencies } from "./http.ts";
+import {
+  defaultDependencies,
+  requestJson,
+  withRetries,
+  type Dependencies,
+  type RetryListener,
+} from "./http.ts";
 
 // Sent on every call so Nightshift's Console attributes the requests to this app.
 const APP_NAME = "provenance";
@@ -89,12 +95,13 @@ export function createMeterlessClient(config: MeterlessConfig, deps: Dependencie
     },
 
     // Returns the model that actually answered: meterless/* routes can reach a non-NVIDIA model.
-    chat: (route: Route, messages: Message[]) =>
+    chat: (route: Route, messages: Message[], onRetry?: RetryListener) =>
       withRetries(
         () => sendChat(route, messages),
         policy.meterless.maxRetries,
         policy.meterless.retryBaseDelayMs,
         deps,
+        onRetry,
       ),
   };
 }

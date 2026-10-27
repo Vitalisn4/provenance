@@ -170,6 +170,7 @@ function parseReply(content: string, asked: { field: string; values: Value[] }[]
 async function ask(
   chat: MeterlessClient["chat"],
   covered: Draft[],
+  onRevision?: (problem: AppError) => void,
 ): Promise<{ verdicts: Map<string, Verdict>; model: string }> {
   const facts = covered.map(({ field, accepted, claimed, registries }) => ({
     field,
@@ -186,7 +187,8 @@ async function ask(
     try {
       return { verdicts: parseReply(content, facts), model };
     } catch (error) {
-      if (attempt >= policy.decision.judgeAttempts) throw error;
+      if (!(error instanceof AppError) || attempt >= policy.decision.judgeAttempts) throw error;
+      onRevision?.(error);
     }
   }
 }
@@ -200,11 +202,13 @@ interface Judgment {
 }
 
 // One deep-lane call per supplier, covering every fact a registry speaks to; a fact no registry covers
-// needs no call, because only documents from the supplier can settle it.
+// needs no call, because only documents from the supplier can settle it. `onRevision` hears of each rejected
+// reply that is asked for again.
 export async function judge(
   chat: MeterlessClient["chat"],
   evidence: Evidence,
   resolution: Resolution,
+  onRevision?: (problem: AppError) => void,
 ): Promise<Judgment> {
   if (resolution.identity === "ambiguous")
     return { check: { identity: "ambiguous" }, reasons: {}, model: null };
@@ -213,7 +217,9 @@ export async function judge(
   const covered = all.filter((draft) => draft.registries.length > 0);
 
   const { verdicts, model } =
-    covered.length > 0 ? await ask(chat, covered) : { verdicts: new Map<string, Verdict>(), model: null };
+    covered.length > 0
+      ? await ask(chat, covered, onRevision)
+      : { verdicts: new Map<string, Verdict>(), model: null };
 
   const facts = all.map(({ field, accepted, claimed, registries }): Fact => {
     const verdict = verdicts.get(field);

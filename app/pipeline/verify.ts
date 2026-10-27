@@ -1,3 +1,4 @@
+import { decide as band } from "#world-model";
 import type { MeterlessClient } from "../adapters/meterless.ts";
 import type { ZetarisClient } from "../adapters/zetaris.ts";
 import { judge } from "../agents/judge.ts";
@@ -55,12 +56,22 @@ function describeEvidence({ erp, gleif, edgar, gaps }: Evidence): string {
   ].join("; ");
 }
 
+const count = (n: number, noun: string, plural = `${noun}s`) => `${n} ${n === 1 ? noun : plural}`;
+
 function describeResolution(resolution: Resolution): string {
   const outcome =
     resolution.identity === "clear"
       ? `clear: ${resolution.entity.legalName} (${resolution.entity.lei})`
-      : `${resolution.identity}: ${resolution.candidates.length} candidates`;
+      : `${resolution.identity}: ${count(resolution.candidates.length, "candidate")}`;
   return [outcome, ...resolution.notes].join("; ");
+}
+
+function describeScores({ compared, candidates }: Resolution): string {
+  const closest = candidates
+    .slice(0, 3)
+    .map(({ entity, similarity }) => `${entity.legalName} ${similarity.toFixed(2)} (${band(similarity)})`);
+  const summary = `World Model scored ${count(compared, "GLEIF entity", "GLEIF entities")}: ${candidates.length} at or above the review band`;
+  return [summary, ...closest].join("; ");
 }
 
 export function describeAction(action: Action): string {
@@ -90,22 +101,57 @@ export async function verify(
     agent: "Pipeline",
     action: "start",
     output: `${fromErp.length} of ${vendorIds.length} ERP suppliers${typedIn}, ${concurrency} at a time`,
+    target: "Scout",
   });
 
   async function verifyOne(vendorId: string): Promise<SupplierResult> {
     try {
       const evidence = await gather(vendorId);
-      trace.log({ agent: "Scout", action: "gather_evidence", output: describeEvidence(evidence) });
-      const resolution = await resolve(evidence);
-      trace.log({ agent: "Resolver", action: "resolve_identity", output: describeResolution(resolution) });
-      const { check, reasons, model } = await judge(judgeChat, evidence, resolution);
-      const verdicts = Object.entries(reasons).map(([field, reason]) => `${field}: ${reason}`);
       trace.log({
-        agent: "Judge",
-        action: "judge_facts",
-        output: verdicts.join(" ") || "no fact needed the model",
-        model,
+        agent: "Scout",
+        action: "gather_evidence",
+        output: describeEvidence(evidence),
+        target: "Resolver",
       });
+      const resolution = await resolve(evidence);
+      if (resolution.compared > 0) {
+        const [closest] = resolution.candidates;
+        trace.log({
+          agent: "Resolver",
+          action: "world_model_score",
+          input: evidence.erp.name ?? "",
+          output: describeScores(resolution),
+          ...(closest && { confidence: closest.similarity }),
+        });
+      }
+      // The Judge has nothing to rule on for an ambiguous supplier, so the Resolver hands it straight on.
+      const judged = resolution.identity !== "ambiguous";
+      trace.log({
+        agent: "Resolver",
+        action: "resolve_identity",
+        output: describeResolution(resolution),
+        target: judged ? "Judge" : "Decision",
+      });
+      const { check, reasons, model } = await judge(judgeChat, evidence, resolution, (problem) => {
+        trace.log({
+          agent: "Judge",
+          action: "critique",
+          output: `${problem.message}; asking the model again`,
+          status: "needs_revision",
+        });
+      });
+      if (judged) {
+        const verdicts = Object.entries(reasons).map(([field, reason]) => `${field}: ${reason}`);
+        const scores = check.identity === "clear" ? check.facts.flatMap((fact) => fact.judgeScore ?? []) : [];
+        trace.log({
+          agent: "Judge",
+          action: "judge_facts",
+          output: verdicts.join(" ") || "no fact needed the model",
+          target: "Decision",
+          model,
+          ...(scores.length > 0 && { confidence: Math.min(...scores) / policy.decision.maxJudgeScore }),
+        });
+      }
       const outcome = decide(check);
       const actions = outcome.actions.map(describeAction);
       trace.log({ agent: "Decision", action: "decide", output: [outcome.decision, ...actions].join("; ") });

@@ -1,18 +1,23 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
+import type { RetryListener } from "../adapters/http.ts";
 import type { MeterlessClient } from "../adapters/meterless.ts";
-import type { ZetarisClient } from "../adapters/zetaris.ts";
+import type { QueryResult, ZetarisClient } from "../adapters/zetaris.ts";
 import { policy } from "../config/policy.ts";
 import { AppError, errorText } from "../domain/errors.ts";
 
+// `target` is the agent the step hands the supplier to, and `confidence` runs from 0 to 1.
 interface Step {
   agent: string;
   action: string;
   input?: string;
   output: string;
+  target?: string;
   model?: string | null;
-  status?: "success" | "error";
+  confidence?: number;
+  retries?: number;
+  status?: "success" | "error" | "retrying" | "needs_revision";
 }
 
 export interface Trace {
@@ -64,7 +69,17 @@ export function openTrace(
   const mask = (text: string) =>
     masked.reduce((result, secret) => result.replaceAll(secret, "...redacted"), text);
 
-  function log({ agent, action, input, output, model = null, status = "success" }: Step): void {
+  function log({
+    agent,
+    action,
+    input,
+    output,
+    target,
+    model = null,
+    confidence,
+    retries = 0,
+    status = "success",
+  }: Step): void {
     const vendorId = supplier.getStore() ?? null;
     const event = {
       timestamp: new Date().toISOString(),
@@ -74,15 +89,20 @@ export function openTrace(
       action,
       input_summary: input === undefined ? null : mask(input),
       output_summary: mask(output),
+      target_agent: target ?? null,
       model,
+      confidence: confidence ?? null,
+      retry_count: retries,
       status,
     };
     appendFileSync(file, `${JSON.stringify(event)}\n`);
     const line = [
-      `[${status === "error" ? "ERROR" : "INFO"}] run_id=${runId}`,
+      `[${status === "error" ? "ERROR" : status === "success" ? "INFO" : "WARN"}] run_id=${runId}`,
       vendorId && `vendor=${vendorId}`,
-      `${agent} ${action}:`,
+      `${agent} ${action}${target ? ` -> ${target}` : ""}:`,
       event.output_summary,
+      confidence !== undefined && `(confidence ${confidence.toFixed(2)})`,
+      retries > 0 && `(after ${retries} ${retries === 1 ? "retry" : "retries"})`,
       model && `(model: ${model})`,
     ];
     out.write(`${line.filter(Boolean).join(" ").replace(/\s+/g, " ")}\n`);
@@ -94,17 +114,30 @@ export function openTrace(
 async function observe<T>(
   trace: Trace,
   step: Omit<Step, "output">,
-  pending: Promise<T>,
+  start: (onRetry: RetryListener) => Promise<T>,
   describe: (result: T) => Pick<Step, "output" | "model">,
 ): Promise<T> {
+  let retries = 0;
+  const onRetry: RetryListener = (error, delayMs) => {
+    retries++;
+    trace.log({
+      agent: step.agent,
+      action: "retry",
+      input: step.action,
+      output: `${errorText(error)}; retry ${retries} in ${delayMs / 1000} s`,
+      retries,
+      status: "retrying",
+    });
+  };
   try {
-    const result = await pending;
-    trace.log({ ...step, ...describe(result) });
+    const result = await start(onRetry);
+    trace.log({ ...step, ...describe(result), retries });
     return result;
   } catch (error) {
     trace.log({
       ...step,
       output: error instanceof AppError ? errorText(error) : String(error),
+      retries,
       status: "error",
     });
     throw error;
@@ -112,20 +145,32 @@ async function observe<T>(
 }
 
 export function tracedZetaris(zetaris: ZetarisClient, trace: Trace, agent: string): ZetarisClient {
-  const traced = (action: keyof ZetarisClient) => (sql: string) =>
-    observe(trace, { agent, action: `zetaris_${action}`, input: sql }, zetaris[action](sql), ({ rows }) => ({
-      output: `${rows.length} rows`,
-    }));
-  return { query: traced("query"), execute: traced("execute") };
+  const describe = ({ rows }: QueryResult) => ({ output: `${rows.length} rows` });
+  return {
+    query: (sql) =>
+      observe(
+        trace,
+        { agent, action: "zetaris_query", input: sql },
+        (onRetry) => zetaris.query(sql, onRetry),
+        describe,
+      ),
+    execute: (sql) =>
+      observe(trace, { agent, action: "zetaris_execute", input: sql }, () => zetaris.execute(sql), describe),
+  };
 }
 
 export function tracedChat(chat: Chat, trace: Trace, agent: string): Chat {
   return (route, messages) => {
     const started = Date.now();
     const step = { agent, action: "nightshift_chat", input: policy.meterless.routes[route] };
-    return observe(trace, step, chat(route, messages), ({ content, model }) => ({
-      output: `${content.length} characters in ${((Date.now() - started) / 1000).toFixed(1)} s`,
-      model,
-    }));
+    return observe(
+      trace,
+      step,
+      (onRetry) => chat(route, messages, onRetry),
+      ({ content, model }) => ({
+        output: `${content.length} characters in ${((Date.now() - started) / 1000).toFixed(1)} s`,
+        model,
+      }),
+    );
   };
 }

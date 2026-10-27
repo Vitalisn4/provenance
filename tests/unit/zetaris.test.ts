@@ -43,9 +43,15 @@ describe("Zetaris client", () => {
       reply(200, { headers: ["one"], data: [["1"]] }),
     );
 
-    await expect(zetaris.query("SELECT 1")).resolves.toEqual({ columns: ["one"], rows: [["1"]] });
+    const onRetry = vi.fn();
+
+    await expect(zetaris.query("SELECT 1", onRetry)).resolves.toEqual({ columns: ["one"], rows: [["1"]] });
     expect(fetch).toHaveBeenCalledTimes(2);
     expect(sleep).toHaveBeenCalledWith(policy.zetaris.retryBaseDelayMs);
+    expect(onRetry).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ message: `Zetaris is unreachable at ${config.restUrl}` }),
+      policy.zetaris.retryBaseDelayMs,
+    );
   });
 
   it("gives up on a read after the retry limit", async () => {

@@ -29,8 +29,8 @@ export function recorder(
   const recording: Recording = { zetaris: {}, nightshift: {} };
   return {
     zetaris: {
-      async query(sql) {
-        const result = await zetaris.query(sql);
+      async query(sql, onRetry) {
+        const result = await zetaris.query(sql, onRetry);
         recording.zetaris[sql] = result;
         return result;
       },
@@ -43,8 +43,8 @@ export function recorder(
           ),
         ),
     },
-    async chat(route, messages) {
-      const reply = await chat(route, messages);
+    async chat(route, messages, onRetry) {
+      const reply = await chat(route, messages, onRetry);
       (recording.nightshift[digest(route, messages)] ??= []).push(reply);
       return reply;
     },
