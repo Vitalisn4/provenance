@@ -9,7 +9,7 @@ import { policy } from "../config/policy.ts";
 import { decide } from "../domain/decide.ts";
 import { AppError, errorText } from "../domain/errors.ts";
 import type { Action } from "../domain/types.ts";
-import { tracedChat, tracedZetaris, type Step, type Trace } from "./trace.ts";
+import { count, tracedChat, tracedZetaris, type Step, type Trace } from "./trace.ts";
 
 export interface Clients {
   zetaris: ZetarisClient;
@@ -58,8 +58,6 @@ function describeEvidence({ erp, gleif, edgar, gaps }: Evidence): string {
     ...gaps,
   ].join("; ");
 }
-
-const count = (n: number, noun: string, plural = `${noun}s`) => `${n} ${n === 1 ? noun : plural}`;
 
 function describeResolution(resolution: Resolution): string {
   const outcome =

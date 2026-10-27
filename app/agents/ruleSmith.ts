@@ -1,7 +1,7 @@
 import { HMEM } from "#hmem";
 import { policy } from "../config/policy.ts";
 import type { Fact } from "../domain/types.ts";
-import type { Trace } from "../pipeline/trace.ts";
+import { count, type Trace } from "../pipeline/trace.ts";
 import type { Resolution } from "./resolver.ts";
 import { confirms, holds, ruleLibrary, sourced, type Rule } from "./rules.ts";
 import type { Evidence } from "./scout.ts";
@@ -98,7 +98,7 @@ export function openRuleSmith(trace: Trace, dir: string) {
     trace.log({
       agent,
       action: "dream",
-      output: `H-MEM dreamt ${proposals.length} clusters from ${observations.size} Judge verdicts`,
+      output: `H-MEM dreamt ${count(proposals.length, "cluster")} from ${count(observations.size, "Judge verdict")}`,
     });
     for (const proposal of proposals) {
       const members = proposal.derivedFrom.flatMap((id) => observations.get(id) ?? []);
