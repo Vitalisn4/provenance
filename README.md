@@ -1,5 +1,7 @@
 # Provenance
 
+![Provenance: supplier checks that learn. Five AI agents check every ERP supplier against GLEIF and SEC EDGAR, then decide ready, fix or escalate, with the evidence.](docs/banner.jpg)
+
 **Supplier-verification agents that turn their own proven judgments into SQL rules Zetaris enforces.**
 
 > **Track:** 1, Solving Fragmented Intelligence. Open Agent Hackathon 2026.
@@ -592,6 +594,6 @@ zetaris/setup/     the SQL that registers the static sources in Zetaris
 input_examples/    four requests
 output_examples/   their live responses, traces, and example 3's H-MEM trust ledger
 tests/             unit tests and the official conformance suites
-docs/              the slide deck (Provenance-deck.pdf) and the analyst-page screenshot
+docs/              the slide deck (Provenance-deck.pdf), the banner and the analyst-page screenshot
 Dockerfile, docker-compose.yml, .env.example, metadata.json
 ```
