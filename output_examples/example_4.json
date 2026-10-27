@@ -1,0 +1,95 @@
+{
+  "run_id": "example-4",
+  "status": "success",
+  "output": {
+    "sample_mode": false,
+    "summary": "Suppliers verified: 2 (2 fix)",
+    "recommendations": [
+      "input:1: correct lei to \"HWUPKR0MPOU8FGXBT394\" from GLEIF",
+      "input:2: correct lei to \"KY37LUS27QQX7BB93L28\" from GLEIF"
+    ],
+    "suppliers": [
+      {
+        "vendorId": "input:1",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "unverified"
+          },
+          {
+            "field": "sic",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "correct",
+            "field": "lei",
+            "value": "HWUPKR0MPOU8FGXBT394",
+            "source": "GLEIF"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'Apple Inc.' exactly matches the accepted legal name, and both GLEIF and EDGAR confirm the same name.",
+          "lei": "GLEIF provides the LEI 'HWUPKR0MPOU8FGXBT394' which exactly matches the accepted value.",
+          "sic": "ERP and EDGAR both list SIC 3571 matching the accepted code, and company_dns confirms industry description 'Electronic Computers' for that code."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "input:2",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "unverified"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "correct",
+            "field": "lei",
+            "value": "KY37LUS27QQX7BB93L28",
+            "source": "GLEIF"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'Nestlé S.A.' matches the accepted legal name 'NESTLÉ S.A.' with only case differences, and GLEIF confirms the exact name.",
+          "lei": "GLEIF provides the LEI 'KY37LUS27QQX7BB93L28' which exactly matches the accepted value."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      }
+    ],
+    "evaluation": {}
+  },
+  "agents": [
+    {
+      "name": "Scout",
+      "role": "Registers the GLEIF and SEC EDGAR records a supplier's identifiers name as Zetaris REST tables, then reads the ERP row and those records in one Zetaris query"
+    },
+    {
+      "name": "Resolver",
+      "role": "Finds the supplier's legal entity: the one its LEI names, or else the best match from a GLEIF search through Zetaris, scored with the Meterless World Model"
+    },
+    {
+      "name": "Judge",
+      "role": "Asks NVIDIA Nemotron through Meterless Nightshift which registry values state the ERP's facts"
+    },
+    {
+      "name": "Decision",
+      "role": "Turns the verdicts into ready, fix or escalate under a fixed policy"
+    }
+  ],
+  "trace_id": "trace-example-4",
+  "log_file": "logs/trace-example-4.jsonl",
+  "execution_time_seconds": 24.436
+}

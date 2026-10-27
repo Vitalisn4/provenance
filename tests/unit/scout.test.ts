@@ -141,6 +141,39 @@ describe("Scout", () => {
     }
   });
 
+  it("reads a typed-in supplier from its own row, base64-encoded so no value can alter the SQL", async () => {
+    const { zetaris, execute, evidenceSql } = fakeZetaris({ erp: [["V-1", null, null]] });
+    const name = `O'Brien "Ltd" \\ ; DROP TABLE x`;
+    const { vendorIds, gather } = await openScout(zetaris, userAgent, [
+      { vendorId: "input:1", name, country: "IE", lei, cik: null, sic: null },
+    ]);
+    expect(vendorIds).toEqual(["V-1"]);
+
+    const evidence = await gather("input:1");
+    const sql = evidenceSql();
+    const decoded = [...sql.matchAll(/CAST\(unbase64\('([\w+/=]+)'\) AS STRING\) AS (\w+)/g)].map(
+      ([, encoded = "", column]) => [column, Buffer.from(encoded, "base64").toString()],
+    );
+    expect(decoded).toEqual([
+      ["vendor_id", "input:1"],
+      ["vendor_name", name],
+      ["country", "IE"],
+      ["claimed_lei", lei],
+    ]);
+    expect(sql).toContain("CAST(NULL AS STRING) AS claimed_cik, CAST(NULL AS STRING) AS claimed_sic) e");
+    expect(sql).not.toMatch(/O'Brien|vendor_master|WHERE/);
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(evidence.gleif).not.toBeNull();
+  });
+
+  it("refuses a typed-in supplier under an ERP vendor ID", async () => {
+    const typed = { vendorId: "V-1", name: "Acme", country: "GB", lei: null, cik: null, sic: null };
+    const error = await failure(
+      openScout(fakeZetaris({ erp: [["V-1", null, null]] }).zetaris, userAgent, [typed]),
+    );
+    expect([error.type, error.message]).toEqual(["input", "V-1 is already a vendor ID"]);
+  });
+
   it("gathers only suppliers in the ERP", async () => {
     const { zetaris, execute } = fakeZetaris({ erp: [["V-1", lei, null]] });
     const { gather } = await openScout(zetaris, userAgent);

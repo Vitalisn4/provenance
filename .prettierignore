@@ -2,3 +2,4 @@ app/engines/
 tests/conformance/
 package-lock.json
 data/sample/
+output_examples/

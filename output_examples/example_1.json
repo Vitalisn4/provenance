@@ -1,0 +1,124 @@
+{
+  "run_id": "example-1",
+  "status": "success",
+  "output": {
+    "sample_mode": false,
+    "summary": "Suppliers verified: 3 (1 ready, 2 fix)",
+    "recommendations": [
+      "V-1010: correct lei to \"20S05OYHG0MQM4VUIC57\" from GLEIF",
+      "V-1030: correct lei to \"5299005DX33HEK6IQS04\" from GLEIF"
+    ],
+    "suppliers": [
+      {
+        "vendorId": "V-1003",
+        "decision": "ready",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [],
+        "reasons": {
+          "name": "ERP value 'Kappa Pay Cameroon S.A' matches the accepted legal name 'KAPPA PAY CAMEROON S.A' with only case differences, and GLEIF confirms the exact name.",
+          "lei": "Both ERP and GLEIF provide the LEI '2549004XTX9UX53WO914' which exactly matches the accepted value."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1010",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "conflicting"
+          },
+          {
+            "field": "sic",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "correct",
+            "field": "lei",
+            "value": "20S05OYHG0MQM4VUIC57",
+            "source": "GLEIF"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'Ford Motor Company' matches the accepted legal name 'FORD MOTOR COMPANY' with only case differences, GLEIF provides the exact name, and EDGAR's 'FORD MOTOR CO' uses the allowed abbreviation 'CO' for 'Company'.",
+          "lei": "GLEIF provides the LEI '20S05OYHG0MQM4VUIC57' matching the accepted value, while ERP's LEI '549300ZGWE2VQHZWVW14' does not.",
+          "sic": "ERP and EDGAR both report SIC 3711 matching the accepted code, and company_dns describes the industry as 'Motor Vehicles and Passenger Car Bodies' consistent with that code."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1030",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "unverified"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "correct",
+            "field": "lei",
+            "value": "5299005DX33HEK6IQS04",
+            "source": "GLEIF"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'Siemens A/S' uses the allowed legal‑form abbreviation (A/S = Aktieselskab) matching the accepted name 'SIEMENS AKTIESELSKAB', and GLEIF confirms the exact legal name.",
+          "lei": "GLEIF provides LEI '5299005DX33HEK6IQS04' which exactly matches the accepted LEI."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      }
+    ],
+    "evaluation": {
+      "held_out": {
+        "correct": 2,
+        "total": 2
+      },
+      "learning": {
+        "correct": 1,
+        "total": 1
+      }
+    }
+  },
+  "agents": [
+    {
+      "name": "Scout",
+      "role": "Registers the GLEIF and SEC EDGAR records a supplier's identifiers name as Zetaris REST tables, then reads the ERP row and those records in one Zetaris query"
+    },
+    {
+      "name": "Resolver",
+      "role": "Finds the supplier's legal entity: the one its LEI names, or else the best match from a GLEIF search through Zetaris, scored with the Meterless World Model"
+    },
+    {
+      "name": "Judge",
+      "role": "Asks NVIDIA Nemotron through Meterless Nightshift which registry values state the ERP's facts"
+    },
+    {
+      "name": "Decision",
+      "role": "Turns the verdicts into ready, fix or escalate under a fixed policy"
+    }
+  ],
+  "trace_id": "trace-example-1",
+  "log_file": "logs/trace-example-1.jsonl",
+  "execution_time_seconds": 76.355
+}

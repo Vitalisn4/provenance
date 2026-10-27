@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
-import { appendFileSync, mkdirSync } from "node:fs";
+import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import type { MeterlessClient } from "../adapters/meterless.ts";
 import type { ZetarisClient } from "../adapters/zetaris.ts";
 import { policy } from "../config/policy.ts";
@@ -16,6 +16,7 @@ interface Step {
 }
 
 export interface Trace {
+  runId: string;
   file: string;
   log: (step: Step) => void;
   // Runs `work` with every step it logs attributed to the supplier, so concurrent suppliers stay apart.
@@ -26,6 +27,20 @@ type Chat = MeterlessClient["chat"];
 
 export function newRunId(now = new Date()): string {
   return `run-${now.toISOString().replace(/\D/g, "").slice(0, 14)}-${randomUUID().slice(0, 8)}`;
+}
+
+// Each run gets a file of its own: under a reused run ID, such as an example's, a suffix keeps the earlier
+// run's trace whole rather than overwriting it or mixing into it.
+function createTraceFile(dir: string, runId: string): string {
+  for (let suffix = ""; ; suffix = `-${randomUUID().slice(0, 8)}`) {
+    const file = `${dir}/trace-${runId}${suffix}.jsonl`;
+    try {
+      writeFileSync(file, "", { flag: "wx" });
+      return file;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    }
+  }
 }
 
 // Technical Execution Guide, section 8: one JSONL file per run, logs/trace-<run_id>.jsonl, and a readable line
@@ -43,7 +58,7 @@ export function openTrace(
     throw new AppError("input", "run_id must be 1 to 64 letters, digits, _ or -", false);
   }
   mkdirSync(dir, { recursive: true });
-  const file = `${dir}/trace-${runId}.jsonl`;
+  const file = createTraceFile(dir, runId);
   const supplier = new AsyncLocalStorage<string>();
   const masked = secrets.filter(Boolean);
   const mask = (text: string) =>
@@ -73,7 +88,7 @@ export function openTrace(
     out.write(`${line.filter(Boolean).join(" ").replace(/\s+/g, " ")}\n`);
   }
 
-  return { file, log, forSupplier: (vendorId, work) => supplier.run(vendorId, work) };
+  return { runId, file, log, forSupplier: (vendorId, work) => supplier.run(vendorId, work) };
 }
 
 async function observe<T>(

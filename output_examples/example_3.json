@@ -1,0 +1,892 @@
+{
+  "run_id": "example-3",
+  "status": "success",
+  "output": {
+    "sample_mode": false,
+    "summary": "Suppliers verified: 31 (11 escalate, 16 fix, 4 ready)",
+    "recommendations": [
+      "V-1001: correct lei to \"VGRQXHF3J8VDLUA7XE92\" from GLEIF",
+      "V-1001: escalate: the sources disagree on sic",
+      "V-1002: correct lei to \"W38RGI023J3WT1HWRP32\" from GLEIF",
+      "V-1004: escalate: the sources disagree on sic",
+      "V-1005: escalate: the sources disagree on sic",
+      "V-1006: escalate: the sources disagree on sic",
+      "V-1007: escalate: the sources disagree on sic",
+      "V-1008: correct lei to \"1Z4GXXU7ZHVWFCD8TV52\" from GLEIF",
+      "V-1009: correct lei to \"KNX4USFCNGPY45LOCE31\" from GLEIF",
+      "V-1010: correct lei to \"20S05OYHG0MQM4VUIC57\" from GLEIF",
+      "V-1011: correct lei to \"INR2EJN1ERAN0W5ZP974\" from GLEIF",
+      "V-1012: escalate: the LEI registration status is LAPSED",
+      "V-1013: escalate: the LEI registration status is LAPSED",
+      "V-1014: escalate: the LEI registration status is LAPSED",
+      "V-1015: escalate: the LEI registration status is LAPSED",
+      "V-1016: escalate: the LEI registration status is LAPSED",
+      "V-1017: correct name to \"CATERPILLAR INC.\" from GLEIF",
+      "V-1018: correct name to \"DEERE & COMPANY\" from GLEIF",
+      "V-1019: correct name to \"HONEYWELL INTERNATIONAL INC.\" from GLEIF",
+      "V-1020: correct name to \"Koninklijke Philips N.V.\" from GLEIF",
+      "V-1021: correct name to \"WALMART INC.\" from GLEIF",
+      "V-1022: request a document for name",
+      "V-1023: request a document for name",
+      "V-1024: request a document for name",
+      "V-1025: request a document for name",
+      "V-1026: request a document for name",
+      "V-1030: correct lei to \"5299005DX33HEK6IQS04\" from GLEIF",
+      "V-1031: escalate: the supplier matches more than one legal entity"
+    ],
+    "suppliers": [
+      {
+        "vendorId": "V-1001",
+        "decision": "escalate",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "unverified"
+          },
+          {
+            "field": "sic",
+            "status": "conflicting"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "correct",
+            "field": "lei",
+            "value": "VGRQXHF3J8VDLUA7XE92",
+            "source": "GLEIF"
+          },
+          {
+            "kind": "escalate",
+            "reason": "the sources disagree on sic"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'International Business Machines Corp' uses an allowed legal-form abbreviation (Corp = Corporation) matching the accepted name 'INTERNATIONAL BUSINESS MACHINES CORPORATION', and both GLEIF and EDGAR confirm the same entity.",
+          "lei": "GLEIF provides LEI 'VGRQXHF3J8VDLUA7XE92' which exactly matches the accepted LEI.",
+          "sic": "ERP and EDGAR both list SIC 3570 matching the accepted code, while company_dns indicates no entry for 3570, confirming the code is not in that industry list."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1002",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "conflicting"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "correct",
+            "field": "lei",
+            "value": "W38RGI023J3WT1HWRP32",
+            "source": "GLEIF"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'Siemens AG' uses the allowed legal‑form abbreviation (AG = Aktiengesellschaft) matching the accepted name 'Siemens Aktiengesellschaft', and GLEIF confirms the same entity.",
+          "lei": "GLEIF provides LEI 'W38RGI023J3WT1HWRP32' which matches the accepted LEI, while ERP's LEI '5299008LSFRCSQJPMO62' does not."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1003",
+        "decision": "ready",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [],
+        "reasons": {
+          "name": "ERP value 'Kappa Pay Cameroon S.A' matches the accepted legal name 'KAPPA PAY CAMEROON S.A' with only case differences, and GLEIF confirms the exact name.",
+          "lei": "Both ERP and GLEIF provide the LEI '2549004XTX9UX53WO914' which exactly matches the accepted value."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1004",
+        "decision": "escalate",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          },
+          {
+            "field": "sic",
+            "status": "conflicting"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "escalate",
+            "reason": "the sources disagree on sic"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'Cisco Systems, Inc.' matches the accepted legal name 'CISCO SYSTEMS, INC.' with only case differences, and both GLEIF and EDGAR confirm the same name.",
+          "lei": "Both ERP and GLEIF provide the LEI '549300LKFJ962MZ46593' which exactly matches the accepted value.",
+          "sic": "ERP and EDGAR both report SIC 3576 matching the accepted code, while company_dns indicates no entry for that code."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1005",
+        "decision": "escalate",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          },
+          {
+            "field": "sic",
+            "status": "conflicting"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "escalate",
+            "reason": "the sources disagree on sic"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'The Procter & Gamble Company' matches the accepted name with only case differences, GLEIF confirms the exact name, and EDGAR's 'PROCTER & GAMBLE Co' refers to the same legal entity.",
+          "lei": "Both ERP and GLEIF provide the LEI '2572IBTT8CCZW6AU4141' which exactly matches the accepted LEI.",
+          "sic": "ERP and EDGAR both list SIC 2840 matching the accepted code, while company_dns indicates no entry for 2840, confirming the code is not in that industry list."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1006",
+        "decision": "escalate",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          },
+          {
+            "field": "sic",
+            "status": "conflicting"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "escalate",
+            "reason": "the sources disagree on sic"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'HP Inc.' uses an allowed legal-form abbreviation (Inc. = Incorporated) matching the accepted name 'HP INC.', and both GLEIF and EDGAR confirm the same entity.",
+          "lei": "Both ERP and GLEIF provide the LEI 'WHKXQACZ14C5XRO8LW03' which exactly matches the accepted LEI.",
+          "sic": "ERP and EDGAR both list SIC 3570 matching the accepted code, while company_dns indicates no entry for 3570, confirming the code is not in that industry list."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1007",
+        "decision": "escalate",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          },
+          {
+            "field": "sic",
+            "status": "conflicting"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "escalate",
+            "reason": "the sources disagree on sic"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'United Parcel Service, Inc.' matches the accepted legal name 'UNITED PARCEL SERVICE, INC.' with only case and punctuation differences, and both GLEIF and EDGAR confirm the same entity.",
+          "lei": "Both ERP and GLEIF provide the LEI 'D01LMJZU09ULLNCY6Z23' which exactly matches the accepted value.",
+          "sic": "ERP and EDGAR both report SIC 4210 matching the accepted code, while company_dns indicates no entry for that code."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1008",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "conflicting"
+          },
+          {
+            "field": "sic",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "correct",
+            "field": "lei",
+            "value": "1Z4GXXU7ZHVWFCD8TV52",
+            "source": "GLEIF"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'Oracle Corporation' matches the accepted legal name 'ORACLE CORPORATION' with only case differences, GLEIF confirms the exact name, and EDGAR's 'ORACLE CORP' uses the allowed legal‑form abbreviation Corp = Corporation.",
+          "lei": "GLEIF provides LEI '1Z4GXXU7ZHVWFCD8TV52' which matches the accepted value, while ERP's LEI '254900H5XMH7XWWGM795' does not.",
+          "sic": "ERP and EDGAR both list SIC 7372 matching the accepted code, and company_dns confirms the industry description 'Prepackaged Software' for that code."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1009",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "conflicting"
+          },
+          {
+            "field": "sic",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "correct",
+            "field": "lei",
+            "value": "KNX4USFCNGPY45LOCE31",
+            "source": "GLEIF"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'Intel Corporation' matches the accepted legal name 'INTEL CORPORATION' with only case differences, GLEIF confirms the exact name, and EDGAR's 'INTEL CORP' uses the allowed legal‑form abbreviation Corp = Corporation.",
+          "lei": "GLEIF provides LEI 'KNX4USFCNGPY45LOCE31' which matches the accepted LEI, while ERP's LEI '549300RISM2SH22CG297' does not.",
+          "sic": "ERP and EDGAR both list SIC 3674 matching the accepted code, and company_dns confirms the industry description 'Semiconductors and Related Devices' for that code."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1010",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "conflicting"
+          },
+          {
+            "field": "sic",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "correct",
+            "field": "lei",
+            "value": "20S05OYHG0MQM4VUIC57",
+            "source": "GLEIF"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'Ford Motor Company' matches the accepted legal name 'FORD MOTOR COMPANY' with only case differences, GLEIF provides the exact name, and EDGAR's 'FORD MOTOR CO' uses the allowed abbreviation 'CO' for 'Company'.",
+          "lei": "GLEIF provides the LEI '20S05OYHG0MQM4VUIC57' matching the accepted value, while ERP's LEI '549300ZGWE2VQHZWVW14' does not.",
+          "sic": "ERP and EDGAR both report SIC 3711 matching the accepted code, and company_dns describes the industry as 'Motor Vehicles and Passenger Car Bodies' consistent with that code."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1011",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "conflicting"
+          },
+          {
+            "field": "sic",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "correct",
+            "field": "lei",
+            "value": "INR2EJN1ERAN0W5ZP974",
+            "source": "GLEIF"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'Microsoft Corporation' matches the accepted legal name 'MICROSOFT CORPORATION' with only case differences, GLEIF confirms the exact name, and EDGAR's 'MICROSOFT CORP' uses the allowed legal‑form abbreviation Corp = Corporation.",
+          "lei": "GLEIF provides LEI 'INR2EJN1ERAN0W5ZP974' which matches the accepted value, while ERP's LEI '335800E7D8TEYEZOH405' does not.",
+          "sic": "ERP and EDGAR both list SIC 7372 matching the accepted code, and company_dns confirms the industry description 'Prepackaged Software' for that code."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1012",
+        "decision": "escalate",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "escalate",
+            "reason": "the LEI registration status is LAPSED"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'Ford Motor Company A/S' matches the accepted legal name 'FORD MOTOR COMPANY A/S' with only case differences, and GLEIF confirms the exact name.",
+          "lei": "Both ERP and GLEIF provide the LEI '549300IDU9WRO0NMRA62' which exactly matches the accepted value."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1013",
+        "decision": "escalate",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "escalate",
+            "reason": "the LEI registration status is LAPSED"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'PepsiCo Sales, Inc.' matches the accepted legal name 'PEPSICO SALES, INC.' with only case differences, and GLEIF confirms the exact name.",
+          "lei": "Both ERP and GLEIF provide the LEI '549300X0T62B72FU6Q21' which exactly matches the accepted value."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1014",
+        "decision": "escalate",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "escalate",
+            "reason": "the LEI registration status is LAPSED"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value '3M Innovative Properties Company' matches the accepted legal name '3M INNOVATIVE PROPERTIES COMPANY' with only case differences, and GLEIF confirms the exact name.",
+          "lei": "Both ERP and GLEIF provide the LEI 'N1UJQ4IJG4SH8I5SLV06' which exactly matches the accepted value."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1015",
+        "decision": "escalate",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "escalate",
+            "reason": "the LEI registration status is LAPSED"
+          }
+        ],
+        "reasons": {
+          "name": "Both ERP and GLEIF provide the exact legal name 'Mitsubishi Caterpillar Forklift America Inc.' which matches the accepted value.",
+          "lei": "Both ERP and GLEIF provide the LEI '549300QFGGPU2T3O6Y49' which exactly matches the accepted value."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1016",
+        "decision": "escalate",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "escalate",
+            "reason": "the LEI registration status is LAPSED"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'Deere-Hitachi Construction Machinery Corporation' matches the accepted legal name 'DEERE-HITACHI CONSTRUCTION MACHINERY CORPORATION' with only case differences, and GLEIF confirms the exact name.",
+          "lei": "Both ERP and GLEIF provide the LEI '549300RW8R22BJXY6F44' which exactly matches the accepted value."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1017",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "conflicting"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          },
+          {
+            "field": "sic",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "correct",
+            "field": "name",
+            "value": "CATERPILLAR INC.",
+            "source": "GLEIF"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'Caterpiller Inc' is a typo of the accepted legal name 'CATERPILLAR INC.' while GLEIF and EDGAR both provide the exact accepted name.",
+          "lei": "Both ERP and GLEIF provide the LEI 'WRJR7GS4GTRECRRTVX92' which exactly matches the accepted value.",
+          "sic": "ERP, EDGAR, and company_dns all indicate SIC 3531, matching the accepted code."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1018",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "conflicting"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          },
+          {
+            "field": "sic",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "correct",
+            "field": "name",
+            "value": "DEERE & COMPANY",
+            "source": "GLEIF"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'John Deere' is a trading name, not the accepted legal name 'DEERE & COMPANY', while GLEIF provides the exact legal name and EDGAR provides 'DEERE & CO' which is an accepted abbreviation of the legal form.",
+          "lei": "Both ERP and GLEIF provide the LEI 'PWFTNG3EI0Y73OXWDH08' which matches the accepted value.",
+          "sic": "ERP, EDGAR, and company_dns all indicate SIC 3523, matching the accepted code."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1019",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "conflicting"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          },
+          {
+            "field": "sic",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "correct",
+            "field": "name",
+            "value": "HONEYWELL INTERNATIONAL INC.",
+            "source": "GLEIF"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'Honeywell Intl' abbreviates 'International' and omits the legal form 'INC.', so it does not match the accepted legal name 'HONEYWELL INTERNATIONAL INC.'; GLEIF and EDGAR confirm the full legal name.",
+          "lei": "Both ERP and GLEIF provide the LEI 'ISRPG12PN4EIEOEMW547' which exactly matches the accepted LEI.",
+          "sic": "ERP and EDGAR both report SIC 3724 matching the accepted code, and company_dns describes 'Aircraft Engines and Engine Parts' which corresponds to SIC 3724."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1020",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "conflicting"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          },
+          {
+            "field": "sic",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "correct",
+            "field": "name",
+            "value": "Koninklijke Philips N.V.",
+            "source": "GLEIF"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'Philips' is only a shortened trading name and does not match the accepted legal name 'Koninklijke Philips N.V.', while GLEIF and EDGAR confirm the full legal name.",
+          "lei": "Both ERP and GLEIF provide the LEI 'H1FJE8H61JGM1JSGM897' which exactly matches the accepted value.",
+          "sic": "ERP, EDGAR, and company_dns all confirm the SIC code '3844' (with company_dns providing the corresponding description 'X-Ray Apparatus and Tubes and Related Irradiation Apparatus')."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1021",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "conflicting"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          },
+          {
+            "field": "sic",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "correct",
+            "field": "name",
+            "value": "WALMART INC.",
+            "source": "GLEIF"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'Wal-Mart Stores' lacks the legal form 'INC.' and uses a former name, so it does not agree with the accepted 'WALMART INC.', while GLEIF and EDGAR confirm the current legal name.",
+          "lei": "Both ERP and GLEIF provide the LEI 'Y87794H0US1R65VBXU25' which exactly matches the accepted value.",
+          "sic": "ERP and EDGAR both list SIC 5331 matching the accepted code, and company_dns describes it as 'Variety Stores' which aligns with that industry classification."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1022",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "unverified"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "request_document",
+            "field": "name"
+          }
+        ],
+        "reasons": {},
+        "model": null
+      },
+      {
+        "vendorId": "V-1023",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "unverified"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "request_document",
+            "field": "name"
+          }
+        ],
+        "reasons": {},
+        "model": null
+      },
+      {
+        "vendorId": "V-1024",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "unverified"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "request_document",
+            "field": "name"
+          }
+        ],
+        "reasons": {},
+        "model": null
+      },
+      {
+        "vendorId": "V-1025",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "unverified"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "request_document",
+            "field": "name"
+          }
+        ],
+        "reasons": {},
+        "model": null
+      },
+      {
+        "vendorId": "V-1026",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "unverified"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "request_document",
+            "field": "name"
+          }
+        ],
+        "reasons": {},
+        "model": null
+      },
+      {
+        "vendorId": "V-1027",
+        "decision": "ready",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          },
+          {
+            "field": "sic",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [],
+        "reasons": {
+          "name": "ERP value 'SAP SE' exactly matches the accepted legal name 'SAP SE', and both GLEIF and EDGAR confirm the same name.",
+          "lei": "Both ERP and GLEIF provide the LEI '529900D6BF99LW9R2E68' which exactly matches the accepted value.",
+          "sic": "ERP and EDGAR both list SIC 7372 matching the accepted code, and company_dns confirms the industry description 'Prepackaged Software' for that code."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1028",
+        "decision": "ready",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          },
+          {
+            "field": "sic",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [],
+        "reasons": {
+          "name": "ERP value 'Apple Inc.' exactly matches the accepted legal name, and both GLEIF and EDGAR confirm the same name.",
+          "lei": "Both ERP and GLEIF provide the LEI 'HWUPKR0MPOU8FGXBT394' which exactly matches the accepted value.",
+          "sic": "ERP and EDGAR both list SIC 3571 matching the accepted code, and company_dns confirms the industry description 'Electronic Computers' for that code."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1029",
+        "decision": "ready",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          },
+          {
+            "field": "sic",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [],
+        "reasons": {
+          "name": "ERP and GLEIF both give 'Nokia Oyj' matching the accepted name, and EDGAR's 'NOKIA CORP' is the English filing name for the same entity.",
+          "lei": "Both ERP and GLEIF provide the LEI '549300A0JPRWG1KI7U06' which exactly matches the accepted value.",
+          "sic": "ERP, EDGAR, and company_dns all confirm SIC 3663, with company_dns providing the corresponding industry description."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1030",
+        "decision": "fix",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "unverified"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "correct",
+            "field": "lei",
+            "value": "5299005DX33HEK6IQS04",
+            "source": "GLEIF"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'Siemens A/S' uses the allowed legal‑form abbreviation (A/S = Aktieselskab) matching the accepted name 'SIEMENS AKTIESELSKAB', and GLEIF confirms the exact legal name.",
+          "lei": "GLEIF provides LEI '5299005DX33HEK6IQS04' which exactly matches the accepted LEI."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1031",
+        "decision": "escalate",
+        "facts": [],
+        "actions": [
+          {
+            "kind": "escalate",
+            "reason": "the supplier matches more than one legal entity"
+          }
+        ],
+        "reasons": {},
+        "model": null
+      }
+    ],
+    "evaluation": {
+      "learning": {
+        "correct": 18,
+        "total": 18
+      },
+      "held_out": {
+        "correct": 13,
+        "total": 13
+      }
+    }
+  },
+  "agents": [
+    {
+      "name": "Scout",
+      "role": "Registers the GLEIF and SEC EDGAR records a supplier's identifiers name as Zetaris REST tables, then reads the ERP row and those records in one Zetaris query"
+    },
+    {
+      "name": "Resolver",
+      "role": "Finds the supplier's legal entity: the one its LEI names, or else the best match from a GLEIF search through Zetaris, scored with the Meterless World Model"
+    },
+    {
+      "name": "Judge",
+      "role": "Asks NVIDIA Nemotron through Meterless Nightshift which registry values state the ERP's facts"
+    },
+    {
+      "name": "Decision",
+      "role": "Turns the verdicts into ready, fix or escalate under a fixed policy"
+    }
+  ],
+  "trace_id": "trace-example-3",
+  "log_file": "logs/trace-example-3.jsonl",
+  "execution_time_seconds": 223.813
+}

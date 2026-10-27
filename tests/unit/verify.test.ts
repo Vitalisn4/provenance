@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { NewSupplier } from "../../app/agents/scout.ts";
 import { policy } from "../../app/config/policy.ts";
 import { AppError } from "../../app/domain/errors.ts";
 import { verify } from "../../app/pipeline/verify.ts";
@@ -20,7 +21,8 @@ function fakeZetaris(failures: Record<string, Error> = {}) {
         rows: vendorIds.map((id) => [id, null, null]),
       };
     }
-    const vendorId = /vendor_id = '([\w-]+)'/.exec(sql)?.[1] ?? "";
+    const typedId = /unbase64\('([\w+/=]+)'\) AS STRING\) AS vendor_id/.exec(sql)?.[1] ?? "";
+    const vendorId = /vendor_id = '([\w-]+)'/.exec(sql)?.[1] ?? Buffer.from(typedId, "base64").toString();
     started.push(vendorId);
     running++;
     peak.value = Math.max(peak.value, running);
@@ -34,11 +36,15 @@ function fakeZetaris(failures: Record<string, Error> = {}) {
   return { zetaris: { query, execute: query }, peak, started };
 }
 
-function run(zetaris: ReturnType<typeof fakeZetaris>["zetaris"], requested: string[] = []) {
+function run(
+  zetaris: ReturnType<typeof fakeZetaris>["zetaris"],
+  requested: string[] = [],
+  typed: NewSupplier[] = [],
+) {
   const { trace, events } = testTrace();
   const chat = () => Promise.reject(new Error("no fact here needs the model"));
   return {
-    results: verify({ zetaris, chat, secUserAgent: "Provenance test@example.com" }, trace, requested),
+    results: verify({ zetaris, chat, secUserAgent: "Provenance test@example.com" }, trace, requested, typed),
     events,
   };
 }
@@ -92,5 +98,21 @@ describe("Pipeline", () => {
 
     const error = await failure(run(zetaris, ["V-1", "V-9"]).results);
     expect([error.type, error.message]).toEqual(["input", "Not in the ERP: V-9"]);
+  });
+
+  it("verifies typed-in suppliers alone, or after the requested ERP suppliers", async () => {
+    const typed = [{ vendorId: "input:1", name: "Acme Ltd", country: "GB", lei: null, cik: null, sic: null }];
+    const decided = async ({ results }: ReturnType<typeof run>) =>
+      (await results).map((result) => [result.vendorId, "decision" in result && result.decision]);
+
+    const alone = run(fakeZetaris().zetaris, [], typed);
+    expect(await decided(alone)).toEqual([["input:1", "fix"]]);
+    expect(alone.events().find((event) => event.action === "start")?.output_summary).toBe(
+      `0 of 6 ERP suppliers and 1 typed in, ${policy.pipeline.concurrency} at a time`,
+    );
+    expect(await decided(run(fakeZetaris().zetaris, ["V-2"], typed))).toEqual([
+      ["V-2", "fix"],
+      ["input:1", "fix"],
+    ]);
   });
 });

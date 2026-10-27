@@ -49,7 +49,24 @@ export interface Evidence {
   gaps: string[];
 }
 
+// A supplier typed into a request rather than read from the ERP, with the ERP's fields.
+export interface NewSupplier {
+  vendorId: string;
+  name: string;
+  country: string;
+  lei: string | null;
+  cik: string | null;
+  sic: string | null;
+}
+
 export const gleifAccept = ["accept", "application/vnd.api+json"] as const;
+
+// A typed value reaches the SQL base64-encoded, so no character in it can end the literal.
+function literal(value: string | null): string {
+  return value === null
+    ? "CAST(NULL AS STRING)"
+    : `CAST(unbase64('${Buffer.from(value).toString("base64")}') AS STRING)`;
+}
 
 function select(prefix: string, fields: Record<string, string>): string[] {
   return Object.entries(fields).map(([key, expression]) => `${expression} AS ${prefix}_${key}`);
@@ -71,11 +88,12 @@ function read<T extends Record<string, string>>(
   ) as Fields<T>;
 }
 
-// Registers the REST tables a supplier's claimed identifiers need, then reads the supplier's ERP row and
-// registry records in one query.
+// Registers the REST tables a supplier's claimed identifiers need, then reads the supplier's ERP row, or the
+// typed-in row standing for it, and its registry records in one query. `vendorIds` are the ERP's.
 export async function openScout(
   zetaris: ZetarisClient,
   secUserAgent: string,
+  typed: readonly NewSupplier[] = [],
 ): Promise<{ vendorIds: string[]; gather: (vendorId: string) => Promise<Evidence> }> {
   // Checked up front, so a bad setting stops the run before any supplier rather than failing each one.
   const userAgent = quotable("SEC_USER_AGENT", secUserAgent);
@@ -86,7 +104,10 @@ export async function openScout(
 
   // A vendor ID goes into the evidence query as a string literal, so only characters that need no escaping
   // are accepted; Spark reads a backslash in a literal as an escape.
-  const suppliers = new Map(
+  const suppliers = new Map<
+    string,
+    { lei: string | null; cik: string | null; from: string; where: string | null }
+  >(
     erp.rows.map(([vendorId, lei = null, cik = null]) => {
       if (!vendorId || !/^[\w-]+$/.test(vendorId)) {
         throw new AppError(
@@ -95,9 +116,26 @@ export async function openScout(
           false,
         );
       }
-      return [vendorId, { lei, cik }];
+      return [
+        vendorId,
+        { lei, cik, from: "prov_erp.vendor_master e", where: `WHERE e.vendor_id = '${vendorId}'` },
+      ];
     }),
   );
+  const vendorIds = [...suppliers.keys()];
+  for (const { vendorId, name, country, lei, cik, sic } of typed) {
+    if (suppliers.has(vendorId)) throw new AppError("input", `${vendorId} is already a vendor ID`, false);
+    const row = {
+      vendor_id: vendorId,
+      vendor_name: name,
+      country,
+      claimed_lei: lei,
+      claimed_cik: cik,
+      claimed_sic: sic,
+    };
+    const columns = Object.entries(row).map(([column, value]) => `${literal(value)} AS ${column}`);
+    suppliers.set(vendorId, { lei, cik, from: `(SELECT ${columns.join(", ")}) e`, where: null });
+  }
 
   async function gleifTable(lei: string | null, gaps: string[]): Promise<string | null> {
     if (lei === null) return null;
@@ -132,11 +170,11 @@ export async function openScout(
     return table;
   }
 
-  // Takes only a vendor ID, so the identifiers looked up and the ID in the SQL are always the ERP's own.
+  // Takes only a vendor ID, so the identifiers looked up and the row in the SQL always belong together.
   async function gather(vendorId: string): Promise<Evidence> {
     const supplier = suppliers.get(vendorId);
     if (!supplier) throw new AppError("zetaris", `Supplier ${vendorId} is not in the ERP`, false);
-    const { lei, cik } = supplier;
+    const { lei, cik, from, where } = supplier;
     const gaps: string[] = [];
     const gleif = await gleifTable(lei, gaps);
     const edgar = await edgarTable(cik, gaps);
@@ -146,11 +184,11 @@ export async function openScout(
         ...(gleif ? select("gleif", gleifFields) : []),
         ...(edgar ? select("edgar", edgarFields) : []),
       ].join(", ")}`,
-      "FROM prov_erp.vendor_master e",
+      `FROM ${from}`,
       sicList,
       ...(gleif ? [`LEFT JOIN ${gleif} g ON true`] : []),
       ...(edgar ? [`LEFT JOIN ${edgar} s ON true`] : []),
-      `WHERE e.vendor_id = '${vendorId}'`,
+      ...(where ? [where] : []),
     ].join("\n");
 
     const { columns, rows } = await zetaris.query(sql);
@@ -171,5 +209,5 @@ export async function openScout(
     };
   }
 
-  return { vendorIds: [...suppliers.keys()], gather };
+  return { vendorIds, gather };
 }

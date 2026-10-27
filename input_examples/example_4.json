@@ -1,0 +1,9 @@
+{
+  "run_id": "example-4",
+  "input": {
+    "suppliers": [
+      { "name": "Apple Inc.", "country": "US", "cik": "320193", "sic": "3571" },
+      { "name": "Nestlé S.A.", "country": "CH" }
+    ]
+  }
+}
