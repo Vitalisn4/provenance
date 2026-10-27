@@ -61,7 +61,7 @@ describe("decide", () => {
       claimed: { value: "Douala Cold Chain SARL", agrees: false },
       registries: [],
       accepted: null,
-      judgeScore: 0,
+      judgeScore: null,
     };
 
     expect(decide({ identity: "clear", facts: [uncovered] })).toEqual({
@@ -96,7 +96,7 @@ describe("decide", () => {
   it("escalates a malformed Judge score and accepts the bar and the maximum", () => {
     const { minJudgeScore, maxJudgeScore } = policy.decision;
 
-    for (const judgeScore of [NaN, Infinity, maxJudgeScore + 1, minJudgeScore + 0.5]) {
+    for (const judgeScore of [null, NaN, Infinity, maxJudgeScore + 1, minJudgeScore + 0.5]) {
       expect(checked({ ...ibmCity, judgeScore }).decision).toBe("escalate");
     }
     for (const judgeScore of [minJudgeScore, maxJudgeScore]) {

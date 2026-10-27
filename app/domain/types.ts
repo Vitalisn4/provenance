@@ -21,8 +21,8 @@ export interface Fact {
   registries: Evidence[];
   // The value the Judge accepted, or null when the evidence let it accept none.
   accepted: string | null;
-  // The Judge's rubric score out of 9.
-  judgeScore: number;
+  // The Judge's rubric score out of 9, or null when no registry covers the field and so nothing was judged.
+  judgeScore: number | null;
 }
 
 export type SupplierCheck =
