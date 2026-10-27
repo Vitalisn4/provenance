@@ -9,7 +9,7 @@ import { AppError, errorText } from "../domain/errors.ts";
 import type { Action } from "../domain/types.ts";
 import { tracedChat, tracedZetaris, type Trace } from "./trace.ts";
 
-interface Clients {
+export interface Clients {
   zetaris: ZetarisClient;
   chat: MeterlessClient["chat"];
   secUserAgent: string;

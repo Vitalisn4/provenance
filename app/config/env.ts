@@ -83,6 +83,11 @@ export function meterlessConfig(source: Source = loadEnv()): MeterlessConfig {
   return { baseUrl: `${host}/v1`, runtimeToken };
 }
 
+// Technical Execution Guide, section 5: SAMPLE_MODE=true runs without Zetaris, Nightshift or any network.
+export function sampleMode(source: Source = loadEnv()): boolean {
+  return source.SAMPLE_MODE?.trim().toLowerCase() === "true";
+}
+
 // SEC fair access requires every EDGAR request to name the app and a contact email.
 export function secUserAgent(source: Source = loadEnv()): string {
   return required(source, "SEC_USER_AGENT");

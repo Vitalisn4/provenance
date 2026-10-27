@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { meterlessConfig, setupValues, zetarisConfig } from "../../app/config/env.ts";
+import { meterlessConfig, sampleMode, setupValues, zetarisConfig } from "../../app/config/env.ts";
 
 const zetaris = {
   ZETARIS_REST_URL: "http://localhost:8888/api/v1.0/",
@@ -75,5 +75,11 @@ describe("settings", () => {
   it("refuses a missing or placeholder runtime token", () => {
     expect(() => meterlessConfig({})).toThrow("METERLESS_RUNTIME_TOKEN is not set");
     expect(() => meterlessConfig({ METERLESS_RUNTIME_TOKEN: "rt-local" })).toThrow("is a placeholder");
+  });
+
+  it("turns sample mode on only when SAMPLE_MODE is true", () => {
+    expect(
+      [" TRUE ", "true", "false", "1", undefined].map((value) => sampleMode({ SAMPLE_MODE: value })),
+    ).toEqual([true, true, false, false, false]);
   });
 });
