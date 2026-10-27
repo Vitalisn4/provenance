@@ -60,6 +60,10 @@ documents). Give one sentence of reason that cites the values.
 Reply with JSON only, one entry per fact, "agrees" holding exactly the sources whose "agrees" was null:
 ${replyShape}`;
 
+// Ultra sometimes answered with a plan of the task instead of the verdict, so the reply format is restated
+// after the facts.
+const reminder = "Reply now with the JSON object only: no plan, steps or prose.";
+
 function claim(value: string | null, agrees: (value: string) => boolean | null): Value | null {
   return value === null ? null : { source: "ERP", value, agrees: agrees(value) };
 }
@@ -174,7 +178,9 @@ async function ask(
   }));
   // Nightshift replayed an earlier answer when only the system message changed, so the instructions travel
   // in the user message.
-  const messages = [{ role: "user" as const, content: `${instructions}\n\n${JSON.stringify({ facts })}` }];
+  const messages = [
+    { role: "user" as const, content: `${instructions}\n\n${JSON.stringify({ facts })}\n\n${reminder}` },
+  ];
   for (let attempt = 1; ; attempt++) {
     const { content, model } = await chat("deep", messages);
     try {

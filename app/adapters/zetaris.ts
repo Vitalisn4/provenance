@@ -4,7 +4,7 @@ import type { ZetarisConfig } from "../config/env.ts";
 import { AppError } from "../domain/errors.ts";
 import { defaultDependencies, requestJson, withRetries, type Dependencies } from "./http.ts";
 
-interface QueryResult {
+export interface QueryResult {
   columns: string[];
   rows: (string | null)[][];
 }

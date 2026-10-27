@@ -30,6 +30,7 @@
     "scout": "tsx app/cli/scout.ts",
     "resolve": "tsx app/cli/resolve.ts",
     "verify": "tsx app/cli/verify.ts",
+    "sample:record": "tsx app/cli/sample-record.ts",
     "evaluate": "tsx app/cli/evaluate.ts"
   },
   "devDependencies": {

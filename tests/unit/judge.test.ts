@@ -68,11 +68,14 @@ function replying(...entries: Entry[]) {
   return chat(JSON.stringify({ facts: entries }));
 }
 
-// The facts the deep lane was asked about, which follow the instructions on the message's last line.
+// The facts the deep lane was asked about, on their own line between the instructions and the closing reminder
+// of the reply format.
 function asked(fake: ReturnType<typeof chat>): unknown {
   const [route, messages] = fake.mock.calls[0] ?? [];
   expect(route).toBe("deep");
-  return JSON.parse(messages?.[0]?.content.split("\n").at(-1) ?? "null");
+  const lines = messages?.[0]?.content.split("\n") ?? [];
+  expect(lines.at(-1)).toBe("Reply now with the JSON object only: no plan, steps or prose.");
+  return JSON.parse(lines.filter((line) => line.startsWith('{"facts":')).at(-1) ?? "null");
 }
 
 const caterpillar = evidence(
