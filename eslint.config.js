@@ -20,6 +20,11 @@ export default defineConfig(
     files: ["app/config/env.ts"],
     rules: { "no-restricted-properties": "off" },
   },
+  // The page runs in the browser; TypeScript checks its names against the DOM types instead.
+  {
+    files: ["app/ui/page/page.js"],
+    rules: { "no-undef": "off" },
+  },
   // This file is outside the TypeScript project, so type-aware rules cannot run on it.
   {
     files: ["eslint.config.js"],

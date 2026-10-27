@@ -5,6 +5,7 @@ import {
   port,
   sampleMode,
   setupValues,
+  uiPort,
   zetarisConfig,
 } from "../../app/config/env.ts";
 
@@ -105,5 +106,12 @@ describe("settings", () => {
     for (const value of ["0", "65536", "80.5", "eighty"]) {
       expect(() => port({ PORT: value })).toThrow("PORT must be a whole number from 1 to 65535");
     }
+  });
+
+  it("serves the analyst page on UI_PORT, 8001 by default", () => {
+    expect([undefined, "9001"].map((value) => uiPort({ UI_PORT: value, PORT: "8080" }))).toEqual([
+      8001, 9001,
+    ]);
+    expect(() => uiPort({ UI_PORT: "0" })).toThrow("UI_PORT must be a whole number from 1 to 65535");
   });
 });

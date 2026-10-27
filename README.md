@@ -8,8 +8,8 @@
 > (only AI provider), NVIDIA Nemotron 3 Ultra, built in Cursor.
 >
 > **Run it with only Docker installed:** `docker build -t provenance .` then
-> `docker run --rm -p 8000:8000 -e SAMPLE_MODE=true provenance`, then
-> `curl -X POST localhost:8000/run -d @input_examples/example_3.json`.
+> `docker run --rm -p 8000:8000 -p 8001:8001 -e SAMPLE_MODE=true provenance`, then open
+> <http://localhost:8001> or `curl -X POST localhost:8000/run -d @input_examples/example_3.json`.
 
 ## Contents
 
@@ -140,7 +140,9 @@ run (`output_examples/example_3.json`):
 
 ```mermaid
 flowchart TD
-    Client["Analyst or evaluator: POST /run"] --> API["app/api/server.ts<br/>validates input, structured errors"]
+    Analyst["Analyst"] --> Page["app/ui: analyst page on UI_PORT<br/>inbox, learned rules, trace"]
+    Page --> API
+    Client["Evaluator or script: POST /run"] --> API["app/api/server.ts<br/>validates input, structured errors"]
     API --> Pipeline["app/pipeline/verify.ts<br/>learning batch first, 2 suppliers at a time"]
     Pipeline --> Scout
     subgraph Zetaris["Zetaris (data layer, rule evaluation)"]
@@ -172,6 +174,7 @@ flowchart TD
 | -------------------- | -------------------------------------------------------------------------------------------- |
 | Language and runtime | TypeScript 6 (strict), Node 20.19+ (Docker: Node 24), run with `tsx`                         |
 | API                  | Node's `http` module: `POST /run` on `0.0.0.0:$PORT`                                         |
+| Analyst page         | HTML, CSS and type-checked JavaScript, no framework or build step, on `0.0.0.0:$UI_PORT`     |
 | Data access          | Zetaris Lightning SQL over its REST API (`app/adapters/zetaris.ts`)                          |
 | Model runtime        | Meterless Nightshift, OpenAI-format chat (`app/adapters/meterless.ts`)                       |
 | Model                | NVIDIA Nemotron 3 Ultra (`nvidia/nemotron-3-ultra-550b-a55b`) on Nightshift's deep lane      |
@@ -244,7 +247,7 @@ With Docker:
 ```bash
 git clone https://github.com/Vitalisn4/provenance.git && cd provenance
 docker build -t provenance .
-docker run --rm -p 8000:8000 -e SAMPLE_MODE=true provenance
+docker run --rm -p 8000:8000 -p 8001:8001 -e SAMPLE_MODE=true provenance
 ```
 
 Or with Node 20.19 or later:
@@ -254,7 +257,8 @@ npm ci
 SAMPLE_MODE=true npm start
 ```
 
-Then, from another terminal:
+Then open the analyst page at <http://localhost:8001>, choose example 3 and press **Verify**. Or, from another
+terminal:
 
 ```bash
 curl -X POST http://localhost:8000/run -H 'content-type: application/json' -d @input_examples/example_3.json
@@ -266,10 +270,12 @@ result as the live run. On a live server, a single request can ask for sample mo
 
 ## 9. Full setup: live mode
 
-### Prerequisites
+### Dependencies
 
 - **Docker**, with at least 8 GB of memory and 4 CPUs for Zetaris.
-- **Node.js 20.19 or later**, for the one-off Zetaris setup command.
+- **Node.js 20.19 or later**, for the one-off Zetaris setup command. The app's only runtime npm package is `tsx`,
+  which runs the TypeScript; everything else is Node's standard library. The development tools, including the
+  headless browser the page's tests run in, are in `package.json`.
 - **Zetaris** running locally: follow "Install Zetaris locally" in the Participant Setup Guide. You need its REST
   URL, org ID and an API key.
 - **Meterless Nightshift**: install it as in the Participant Setup Guide, add NVIDIA in its **Providers** tab with
@@ -294,7 +300,7 @@ npm run zetaris:setup
 # Checks Nightshift: status, models, and one short request per lane with the model that answered
 npm run meterless:check
 
-npm start               # serves POST /run on port 8000
+npm start               # serves POST /run on port 8000 and the analyst page on port 8001
 ```
 
 The GLEIF and EDGAR tables are created by the agents during the first run, so the first live run of example 3
@@ -308,7 +314,7 @@ Zetaris and Nightshift run outside the app's container, where `localhost` means 
   and `METERLESS_BASE_URL=http://host.docker.internal:8088/v1`, then
 
   ```bash
-  docker run --rm -p 8000:8000 --env-file .env provenance
+  docker run --rm -p 8000:8000 -p 8001:8001 --env-file .env provenance
   ```
 
 - **Linux:** keep the `localhost` and `127.0.0.1` addresses and share the host's network, which also reaches an
@@ -320,20 +326,41 @@ Zetaris and Nightshift run outside the app's container, where `localhost` means 
 
 ### Settings
 
-| Variable                                                | Purpose                                                                                       |
-| ------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `ZETARIS_REST_URL`, `ZETARIS_ORG_ID`, `ZETARIS_API_KEY` | Zetaris's REST API                                                                            |
-| `METERLESS_BASE_URL`, `METERLESS_RUNTIME_TOKEN`         | Nightshift's URL and Runtime token (never the `rt-local` placeholder)                         |
-| `SEC_USER_AGENT`                                        | An app name and contact email, which SEC EDGAR's fair-access policy requires on every request |
-| `ERP_DB_PASSWORD`                                       | The synthetic ERP database's password, used by `docker compose` and `npm run zetaris:setup`   |
-| `SAMPLE_MODE`                                           | `true` replays the recording with no Zetaris, Nightshift or network                           |
-| `PORT`                                                  | The port `POST /run` is served on (default 8000)                                              |
-| `API_TOKEN`                                             | Optional: when set, `POST /run` requires `Authorization: Bearer <API_TOKEN>`                  |
+| Variable                                                | Purpose                                                                                           |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `ZETARIS_REST_URL`, `ZETARIS_ORG_ID`, `ZETARIS_API_KEY` | Zetaris's REST API                                                                                |
+| `METERLESS_BASE_URL`, `METERLESS_RUNTIME_TOKEN`         | Nightshift's URL and Runtime token (never the `rt-local` placeholder)                             |
+| `SEC_USER_AGENT`                                        | An app name and contact email, which SEC EDGAR's fair-access policy requires on every request     |
+| `ERP_DB_PASSWORD`                                       | The synthetic ERP database's password, used by `docker compose` and `npm run zetaris:setup`       |
+| `SAMPLE_MODE`                                           | `true` replays the recording with no Zetaris, Nightshift or network                               |
+| `PORT`                                                  | The port `POST /run` is served on (default 8000)                                                  |
+| `UI_PORT`                                               | The port the analyst page is served on (default 8001)                                             |
+| `API_TOKEN`                                             | Optional: when set, `POST /run` and the page's traces require `Authorization: Bearer <API_TOKEN>` |
 
 Settings are read from the environment, then `.env`; values already in the environment win. Secrets are masked
 as `...redacted` in every log line.
 
 ## 10. Usage
+
+### Analyst page
+
+`npm start` also serves the analyst page on `UI_PORT` (default 8001), a port of its own so a long run never holds
+up the API. Pick an example or edit the request, choose sample or live mode, and press **Verify**. The page shows:
+
+- **The run:** status, time, the decision counts, how many suppliers the model judged and how many learned rules
+  settled, and the score against the answer key.
+- **The supplier inbox:** each supplier's decision, the status of each fact, the actions to take, the Judge's
+  reasons, the evidence Zetaris returned, and whether the model or a learned rule decided it. Filter by
+  Escalate, Fix or Ready.
+- **The learned rules:** each rule's status, support, reason and SQL.
+- **The trace:** every step of the run, filterable by supplier, with each Zetaris query and the model that answered.
+
+![The analyst page after a live run of example 1](docs/analyst-page.png)
+
+The page sends its request to the API through its own server, so it needs no access across origins. It inserts
+every value from a run as text, and its content security policy allows only its own script and stylesheet, with
+no inline code. With `API_TOKEN` set, enter the token on the page. It works from the keyboard alone and on a
+phone-sized screen, where the wide tables scroll within their own panels.
 
 ### `POST /run`
 
@@ -454,13 +481,14 @@ In Docker, read the trace with `docker cp <container>:/app/logs .`; stdout alrea
 ## 12. Tests
 
 ```bash
-npm run check          # typecheck, lint, unused code, formatting, 161 unit tests, both engine conformance suites
+npm run check          # typecheck, lint, unused code, formatting, 178 unit tests, both engine conformance suites
 npm run conformance    # the official Meterless suites alone: H-MEM 13/13, World Model 8/8
 ```
 
-The unit tests cover every agent, the decision policy, the scoring, the API's contract and errors, retries and
-timeouts, sample mode (a full offline replay asserts the learned rules and the suppliers they settle) and a
-secrets scan of every tracked file. The new logic of each slice was mutation-tested, and every mutant was killed.
+The unit tests cover every agent, the decision policy, the scoring, the API's contract and errors, the analyst
+page's server and its script (run in a headless browser against the real server), retries and timeouts, sample
+mode (a full offline replay asserts the learned rules and the suppliers they settle) and a secrets scan of every
+tracked file. The new logic of each slice was mutation-tested, and every mutant that changes behaviour was killed.
 
 ## 13. Data and licences
 
@@ -511,7 +539,7 @@ source, is in `app/config/policy.ts`.
 - **A small evaluation.** 31 suppliers, labelled by us; the accuracy figures show the system works on this set,
   not that it generalises.
 - **Model speed.** Nemotron 3 Ultra takes 5–60 s per verdict and is rate-limited, hence two suppliers at a time.
-- **No user interface.** The product is the `POST /run` API, its JSON and the trace.
+- **The analyst page only reports.** Accepting a correction still means editing the ERP; nothing is written back.
 - **Nightshift has no Linux build**, so on Linux it runs on another machine, reached through an SSH tunnel.
 
 ## 16. Pre-existing components
@@ -539,6 +567,7 @@ app/
   engines/         Meterless H-MEM and World Model (pre-existing, unchanged)
   evaluation/      scoring against the answer key
   pipeline/        the run: order, concurrency, trace
+  ui/              the analyst page (page/: HTML, CSS and script) and its server
 data/              synthetic ERP, answer key, sample recording
 zetaris/setup/     the SQL that registers the static sources in Zetaris
 input_examples/    four requests

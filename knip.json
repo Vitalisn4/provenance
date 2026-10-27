@@ -1,4 +1,4 @@
 {
-  "entry": ["app/engines/*/src/index.ts"],
+  "entry": ["app/engines/*/src/index.ts", "app/ui/page/page.js"],
   "ignoreIssues": { "app/engines/**": ["exports", "types"] }
 }

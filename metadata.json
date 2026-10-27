@@ -5,9 +5,10 @@
   "repository": "https://github.com/Vitalisn4/provenance",
   "entry_point": {
     "command": "npm start",
-    "docker": "docker run --rm -p 8000:8000 -e SAMPLE_MODE=true provenance",
+    "docker": "docker run --rm -p 8000:8000 -p 8001:8001 -e SAMPLE_MODE=true provenance",
     "endpoint": "POST /run",
-    "port": 8000
+    "port": 8000,
+    "ui_port": 8001
   },
   "agents": ["Scout", "Resolver", "Judge", "Rule Smith", "Decision"],
   "sponsor_technology": {
