@@ -1,18 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { isValidLei } from "../../app/domain/lei.ts";
-
-interface Issue {
-  pattern: string;
-  field?: "lei" | "name" | "sic";
-  correct?: string;
-  candidates?: string[];
-}
-
-interface AnswerKey {
-  patterns: Record<string, { origin: string; learnable: boolean; description: string }>;
-  suppliers: Record<string, { batch: string; decision: string; issues: Issue[] }>;
-}
+import { readAnswerKey } from "../../app/evaluation/score.ts";
 
 interface VendorRow {
   id: string;
@@ -24,7 +13,7 @@ interface VendorRow {
 }
 
 const read = (path: string) => readFileSync(new URL(`../../data/${path}`, import.meta.url), "utf8");
-const key = JSON.parse(read("answer-key.json")) as AnswerKey;
+const key = readAnswerKey();
 
 const sqlValue = String.raw`'((?:[^']|'')*)'|NULL`;
 const sqlTuple = new RegExp(String.raw`^(?:${sqlValue})(?:, (?:${sqlValue}))*$`);
