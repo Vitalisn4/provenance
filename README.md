@@ -273,6 +273,8 @@ npm ci
 SAMPLE_MODE=true npm start
 ```
 
+In Windows PowerShell, start it with `$env:SAMPLE_MODE="true"; npm start` instead.
+
 Then open the analyst page at <http://localhost:8001>, choose example 3 and press **Verify**. Or, from another
 terminal:
 
