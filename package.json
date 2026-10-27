@@ -18,7 +18,7 @@
     "node": ">=20.19"
   },
   "scripts": {
-    "typecheck": "tsc",
+    "typecheck": "tsc && tsc -p app/ui/page",
     "lint": "eslint .",
     "unused": "knip",
     "format": "prettier --write .",
@@ -45,6 +45,7 @@
     "@eslint/js": "^10.0.1",
     "@types/node": "^20.19.43",
     "eslint": "^10.13.0",
+    "happy-dom": "^21.0.4",
     "knip": "^6.42.1",
     "prettier": "^3.9.10",
     "typescript": "^6.0.3",

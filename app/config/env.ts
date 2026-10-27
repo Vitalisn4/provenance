@@ -93,13 +93,17 @@ export function apiToken(source: Source = loadEnv()): string | null {
   return source.API_TOKEN?.trim() || null;
 }
 
-export function port(source: Source = loadEnv()): number {
-  const value = Number(source.PORT?.trim() || "8000");
+function listenPort(source: Source, name: string, fallback: string): number {
+  const value = Number(source[name]?.trim() || fallback);
   if (!Number.isInteger(value) || value < 1 || value > 65535) {
-    throw new AppError("config", "PORT must be a whole number from 1 to 65535", false);
+    throw new AppError("config", `${name} must be a whole number from 1 to 65535`, false);
   }
   return value;
 }
+
+export const port = (source: Source = loadEnv()) => listenPort(source, "PORT", "8000");
+
+export const uiPort = (source: Source = loadEnv()) => listenPort(source, "UI_PORT", "8001");
 
 // SEC fair access requires every EDGAR request to name the app and a contact email.
 export function secUserAgent(source: Source = loadEnv()): string {

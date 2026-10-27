@@ -100,7 +100,7 @@ export function parseRequest(body: string): RunRequest {
 }
 
 // Refuses the body as soon as it passes `maxBody` bytes, without reading the rest.
-function readBody(request: IncomingMessage): Promise<string> {
+export function readBody(request: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     let size = 0;
@@ -121,7 +121,7 @@ function readBody(request: IncomingMessage): Promise<string> {
 }
 
 // A connection whose request body was not read to the end is closed, so the rest of it is never taken in.
-function send(response: ServerResponse, status: number, body: unknown): void {
+export function send(response: ServerResponse, status: number, body: unknown): void {
   response.writeHead(status, {
     "content-type": "application/json",
     ...(!response.req.complete && { connection: "close" }),
@@ -129,7 +129,18 @@ function send(response: ServerResponse, status: number, body: unknown): void {
   response.end(`${JSON.stringify(body, null, 2)}\n`);
 }
 
+export const errorBody = (type: string, message: string) => ({
+  status: "error",
+  error: { type, message, recoverable: false },
+});
+
 const digest = (text: string) => createHash("sha256").update(text).digest();
+
+// With no `token`, every request is let through.
+export function bearerCheck(token: string | null): (request: IncomingMessage) => boolean {
+  const expected = token === null ? null : digest(`Bearer ${token}`);
+  return (request) => !expected || timingSafeEqual(digest(request.headers.authorization ?? ""), expected);
+}
 
 // Technical Execution Guide, section 2: POST /run verifies the requested ERP suppliers and any typed-in ones,
 // or every ERP supplier, and answers with the results and the run's trace, or with a structured error. With
@@ -143,7 +154,7 @@ export function createApp({
   out: { write: (line: string) => unknown };
   token?: string | null;
 }): Server {
-  const expected = token === null ? null : digest(`Bearer ${token}`);
+  const authorized = bearerCheck(token);
   async function run(request: IncomingMessage): Promise<{ status: number; body: object }> {
     const started = performance.now();
     const elapsed = () => Math.round(performance.now() - started) / 1000;
@@ -211,21 +222,15 @@ export function createApp({
 
   return createServer((request, response) => {
     if (request.method !== "POST" || request.url !== "/run") {
-      send(response, 404, {
-        status: "error",
-        error: { type: "input", message: "Only POST /run is served", recoverable: false },
-      });
+      send(response, 404, errorBody("input", "Only POST /run is served"));
       return;
     }
-    if (expected && !timingSafeEqual(digest(request.headers.authorization ?? ""), expected)) {
-      send(response, 401, {
-        status: "error",
-        error: {
-          type: "unauthorized",
-          message: "POST /run needs the header Authorization: Bearer <API_TOKEN>",
-          recoverable: false,
-        },
-      });
+    if (!authorized(request)) {
+      send(
+        response,
+        401,
+        errorBody("unauthorized", "POST /run needs the header Authorization: Bearer <API_TOKEN>"),
+      );
       return;
     }
     run(request).then(
@@ -234,10 +239,7 @@ export function createApp({
       },
       (error: unknown) => {
         console.error(error);
-        send(response, 500, {
-          status: "error",
-          error: { type: "internal", message: "Unexpected failure; see the server log", recoverable: false },
-        });
+        send(response, 500, errorBody("internal", "Unexpected failure; see the server log"));
       },
     );
   });

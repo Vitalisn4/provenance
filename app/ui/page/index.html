@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Provenance: supplier verification</title>
+    <link rel="stylesheet" href="page.css" />
+    <script type="module" src="page.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>Provenance</h1>
+      <p class="lead">
+        Checks each ERP supplier's name, LEI and industry code against GLEIF and SEC EDGAR, through Zetaris,
+        and says which records are ready, which to fix and which a person must decide.
+      </p>
+    </header>
+
+    <form id="run-form">
+      <div class="row" id="examples" role="group" aria-label="Examples"><strong>Examples</strong></div>
+      <label for="request">Request to <code>POST /run</code></label>
+      <textarea id="request" spellcheck="false"></textarea>
+      <div class="row">
+        <label
+          >Mode
+          <select id="mode">
+            <option value="default">Server default</option>
+            <option value="sample">Sample (recorded data)</option>
+            <option value="live">Live (Zetaris and Nightshift)</option>
+          </select>
+        </label>
+        <label
+          >API token
+          <input id="token" type="password" autocomplete="off" placeholder="only if API_TOKEN is set"
+        /></label>
+        <button class="primary" id="run" type="submit">Verify</button>
+      </div>
+      <p id="status" role="status" aria-live="polite"></p>
+    </form>
+
+    <div id="results" hidden>
+      <section>
+        <h2>Run</h2>
+        <dl class="summary" id="summary"></dl>
+        <ol class="agents" id="agents"></ol>
+      </section>
+
+      <section id="inbox-section">
+        <h2>Supplier inbox</h2>
+        <div class="row" id="filters" role="group" aria-label="Filter by decision"></div>
+        <div id="inbox"></div>
+      </section>
+
+      <section id="rules-section">
+        <h2>Rules the Rule Smith learned</h2>
+        <p class="muted">
+          Proposed from the Judge's verdicts on the learning batch; promoted only when the Judge confirmed
+          every supplier the rule held for. Promoted rules settle facts in Zetaris SQL without a model call.
+        </p>
+        <div class="scroll" tabindex="0" role="region" aria-label="Learned rules">
+          <table>
+            <thead>
+              <tr>
+                <th>Rule</th>
+                <th>Status</th>
+                <th>Support</th>
+                <th>Why</th>
+              </tr>
+            </thead>
+            <tbody id="rules"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="trace-section">
+        <h2>Trace</h2>
+        <div class="row">
+          <label
+            >Supplier
+            <select id="trace-filter"></select>
+          </label>
+          <span class="muted" id="trace-file"></span>
+        </div>
+        <div class="scroll" tabindex="0" role="region" aria-label="Trace steps">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Supplier</th>
+                <th>Agent</th>
+                <th>Action</th>
+                <th>Result</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="trace"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>
