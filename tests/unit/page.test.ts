@@ -1,4 +1,4 @@
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
@@ -100,6 +100,7 @@ async function open(base: Promise<string> = sampleUi) {
 }
 
 afterEach(() => {
+  if (!existsSync("logs")) return;
   for (const name of readdirSync("logs").filter((file) => file.startsWith("trace-test-page"))) {
     rmSync(`logs/${name}`, { recursive: true, force: true });
   }
