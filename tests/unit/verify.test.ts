@@ -101,18 +101,18 @@ describe("Pipeline", () => {
   });
 
   it("verifies typed-in suppliers alone, or after the requested ERP suppliers", async () => {
-    const typed = [{ vendorId: "input-1", name: "Acme Ltd", country: "GB", lei: null, cik: null, sic: null }];
+    const typed = [{ vendorId: "input:1", name: "Acme Ltd", country: "GB", lei: null, cik: null, sic: null }];
     const decided = async ({ results }: ReturnType<typeof run>) =>
       (await results).map((result) => [result.vendorId, "decision" in result && result.decision]);
 
     const alone = run(fakeZetaris().zetaris, [], typed);
-    expect(await decided(alone)).toEqual([["input-1", "fix"]]);
+    expect(await decided(alone)).toEqual([["input:1", "fix"]]);
     expect(alone.events().find((event) => event.action === "start")?.output_summary).toBe(
       `0 of 6 ERP suppliers and 1 typed in, ${policy.pipeline.concurrency} at a time`,
     );
     expect(await decided(run(fakeZetaris().zetaris, ["V-2"], typed))).toEqual([
       ["V-2", "fix"],
-      ["input-1", "fix"],
+      ["input:1", "fix"],
     ]);
   });
 });

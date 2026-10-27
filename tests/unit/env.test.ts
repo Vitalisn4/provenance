@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { meterlessConfig, port, sampleMode, setupValues, zetarisConfig } from "../../app/config/env.ts";
+import {
+  apiToken,
+  meterlessConfig,
+  port,
+  sampleMode,
+  setupValues,
+  zetarisConfig,
+} from "../../app/config/env.ts";
 
 const zetaris = {
   ZETARIS_REST_URL: "http://localhost:8888/api/v1.0/",
@@ -81,6 +88,14 @@ describe("settings", () => {
     expect(
       [" TRUE ", "true", "false", "1", undefined].map((value) => sampleMode({ SAMPLE_MODE: value })),
     ).toEqual([true, true, false, false, false]);
+  });
+
+  it("requires a bearer token only when API_TOKEN is set", () => {
+    expect([undefined, " ", " secret "].map((value) => apiToken({ API_TOKEN: value }))).toEqual([
+      null,
+      null,
+      "secret",
+    ]);
   });
 
   it("serves on PORT, 8000 by default, and refuses a port that cannot exist", () => {

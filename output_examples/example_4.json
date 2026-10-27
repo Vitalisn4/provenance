@@ -5,12 +5,12 @@
     "sample_mode": false,
     "summary": "Suppliers verified: 2 (2 fix)",
     "recommendations": [
-      "input-1: correct lei to \"HWUPKR0MPOU8FGXBT394\" from GLEIF",
-      "input-2: correct lei to \"KY37LUS27QQX7BB93L28\" from GLEIF"
+      "input:1: correct lei to \"HWUPKR0MPOU8FGXBT394\" from GLEIF",
+      "input:2: correct lei to \"KY37LUS27QQX7BB93L28\" from GLEIF"
     ],
     "suppliers": [
       {
-        "vendorId": "input-1",
+        "vendorId": "input:1",
         "decision": "fix",
         "facts": [
           {
@@ -37,12 +37,12 @@
         "reasons": {
           "name": "ERP value 'Apple Inc.' exactly matches the accepted legal name, and both GLEIF and EDGAR confirm the same name.",
           "lei": "GLEIF provides the LEI 'HWUPKR0MPOU8FGXBT394' which exactly matches the accepted value.",
-          "sic": "ERP and EDGAR both list SIC 3571 matching the accepted code, and company_dns confirms the industry description 'Electronic Computers' for that code."
+          "sic": "ERP and EDGAR both list SIC 3571 matching the accepted code, and company_dns confirms industry description 'Electronic Computers' for that code."
         },
         "model": "nvidia/nemotron-3-ultra-550b-a55b"
       },
       {
-        "vendorId": "input-2",
+        "vendorId": "input:2",
         "decision": "fix",
         "facts": [
           {
@@ -64,7 +64,7 @@
         ],
         "reasons": {
           "name": "ERP value 'Nestlé S.A.' matches the accepted legal name 'NESTLÉ S.A.' with only case differences, and GLEIF confirms the exact name.",
-          "lei": "GLEIF provides LEI 'KY37LUS27QQX7BB93L28' which exactly matches the accepted LEI."
+          "lei": "GLEIF provides the LEI 'KY37LUS27QQX7BB93L28' which exactly matches the accepted value."
         },
         "model": "nvidia/nemotron-3-ultra-550b-a55b"
       }
@@ -91,5 +91,5 @@
   ],
   "trace_id": "trace-example-4",
   "log_file": "logs/trace-example-4.jsonl",
-  "execution_time_seconds": 44.114
+  "execution_time_seconds": 24.436
 }

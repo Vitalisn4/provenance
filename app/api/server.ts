@@ -1,4 +1,6 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import { basename } from "node:path";
 import type { NewSupplier } from "../agents/scout.ts";
 import { AppError, errorText, type ErrorType } from "../domain/errors.ts";
 import { readAnswerKey, score } from "../evaluation/score.ts";
@@ -55,7 +57,8 @@ function parseSupplier(supplier: unknown, index: number): NewSupplier {
     throw new AppError("input", `${label}.country must be a two-letter ISO country code`, false);
   }
   return {
-    vendorId: `input-${index + 1}`,
+    // The Scout holds ERP vendor IDs to letters, digits, _ and -, so with a colon no ERP supplier has this ID.
+    vendorId: `input:${index + 1}`,
     name,
     country: country.toUpperCase(),
     lei: text(supplier, "lei", label, 40),
@@ -92,32 +95,51 @@ export function parseRequest(body: string): RunRequest {
   return { runId, vendorIds, suppliers: suppliers.map(parseSupplier), sample };
 }
 
-// Reads the whole body but keeps at most `maxBody` bytes of it.
-async function readBody(request: IncomingMessage): Promise<string> {
-  const chunks: Buffer[] = [];
-  let size = 0;
-  for await (const chunk of request as AsyncIterable<Buffer>) {
-    size += chunk.length;
-    if (size <= maxBody) chunks.push(chunk);
-  }
-  if (size > maxBody) throw new AppError("input", "The request body is over 64 KB", false);
-  return Buffer.concat(chunks).toString("utf8");
+// Refuses the body as soon as it passes `maxBody` bytes, without reading the rest.
+function readBody(request: IncomingMessage): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let size = 0;
+    request.on("data", (chunk: Buffer) => {
+      size += chunk.length;
+      if (size <= maxBody) {
+        chunks.push(chunk);
+        return;
+      }
+      request.pause();
+      reject(new AppError("input", "The request body is over 64 KB", false));
+    });
+    request.on("end", () => {
+      resolve(Buffer.concat(chunks).toString("utf8"));
+    });
+    request.on("error", reject);
+  });
 }
 
+// A connection whose request body was not read to the end is closed, so the rest of it is never taken in.
 function send(response: ServerResponse, status: number, body: unknown): void {
-  response.writeHead(status, { "content-type": "application/json" });
+  response.writeHead(status, {
+    "content-type": "application/json",
+    ...(!response.req.complete && { connection: "close" }),
+  });
   response.end(`${JSON.stringify(body, null, 2)}\n`);
 }
 
+const digest = (text: string) => createHash("sha256").update(text).digest();
+
 // Technical Execution Guide, section 2: POST /run verifies the requested ERP suppliers and any typed-in ones,
-// or every ERP supplier, and answers with the results and the run's trace, or with a structured error.
+// or every ERP supplier, and answers with the results and the run's trace, or with a structured error. With
+// a `token`, a request must carry it as a bearer token.
 export function createApp({
   sampleDefault,
   out,
+  token = null,
 }: {
   sampleDefault: boolean;
   out: { write: (line: string) => unknown };
+  token?: string | null;
 }): Server {
+  const expected = token === null ? null : digest(`Bearer ${token}`);
   async function run(request: IncomingMessage): Promise<{ status: number; body: object }> {
     const started = performance.now();
     const elapsed = () => Math.round(performance.now() - started) / 1000;
@@ -179,6 +201,17 @@ export function createApp({
       });
       return;
     }
+    if (expected && !timingSafeEqual(digest(request.headers.authorization ?? ""), expected)) {
+      send(response, 401, {
+        status: "error",
+        error: {
+          type: "unauthorized",
+          message: "POST /run needs the header Authorization: Bearer <API_TOKEN>",
+          recoverable: false,
+        },
+      });
+      return;
+    }
     run(request).then(
       ({ status, body }) => {
         send(response, status, body);
@@ -194,6 +227,6 @@ export function createApp({
   });
 }
 
-function traceFields({ runId, file }: Trace): { trace_id: string; log_file: string } {
-  return { trace_id: `trace-${runId}`, log_file: file };
+function traceFields({ file }: Trace): { trace_id: string; log_file: string } {
+  return { trace_id: basename(file, ".jsonl"), log_file: file };
 }

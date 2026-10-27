@@ -29,6 +29,20 @@ export function newRunId(now = new Date()): string {
   return `run-${now.toISOString().replace(/\D/g, "").slice(0, 14)}-${randomUUID().slice(0, 8)}`;
 }
 
+// Each run gets a file of its own: under a reused run ID, such as an example's, a suffix keeps the earlier
+// run's trace whole rather than overwriting it or mixing into it.
+function createTraceFile(dir: string, runId: string): string {
+  for (let suffix = ""; ; suffix = `-${randomUUID().slice(0, 8)}`) {
+    const file = `${dir}/trace-${runId}${suffix}.jsonl`;
+    try {
+      writeFileSync(file, "", { flag: "wx" });
+      return file;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    }
+  }
+}
+
 // Technical Execution Guide, section 8: one JSONL file per run, logs/trace-<run_id>.jsonl, and a readable line
 // on `out` for each step. Each secret value is masked wherever it appears.
 export function openTrace(
@@ -44,9 +58,7 @@ export function openTrace(
     throw new AppError("input", "run_id must be 1 to 64 letters, digits, _ or -", false);
   }
   mkdirSync(dir, { recursive: true });
-  const file = `${dir}/trace-${runId}.jsonl`;
-  // A reused run ID, such as an example's, replaces the earlier run's trace rather than mixing into it.
-  writeFileSync(file, "");
+  const file = createTraceFile(dir, runId);
   const supplier = new AsyncLocalStorage<string>();
   const masked = secrets.filter(Boolean);
   const mask = (text: string) =>

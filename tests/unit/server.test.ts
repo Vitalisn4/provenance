@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, rmSync } from "node:fs";
-import type { Server } from "node:http";
+import { request as httpRequest, type IncomingMessage, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
+import { basename } from "node:path";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../app/api/server.ts";
 import { AppError } from "../../app/domain/errors.ts";
@@ -16,8 +17,8 @@ const out = { write: (line: string) => lines.push(line) };
 const servers: Server[] = [];
 const traces: string[] = [];
 
-async function start(sampleDefault: boolean): Promise<string> {
-  const server = createApp({ sampleDefault, out });
+async function start(sampleDefault: boolean, token: string | null = null): Promise<string> {
+  const server = createApp({ sampleDefault, out, token });
   servers.push(server);
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   return `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -25,9 +26,13 @@ async function start(sampleDefault: boolean): Promise<string> {
 
 const sampleServer = start(true);
 
-async function post(body: string | object, { path = "/run", server = sampleServer, method = "POST" } = {}) {
+async function post(
+  body: string | object,
+  { path = "/run", server = sampleServer, method = "POST", headers = {} } = {},
+) {
   const response = await fetch(`${await server}${path}`, {
     method,
+    headers,
     ...(method === "POST" && { body: typeof body === "string" ? body : JSON.stringify(body) }),
   });
   const json = (await response.json()) as Record<string, unknown>;
@@ -105,6 +110,16 @@ describe("POST /run", () => {
     });
   });
 
+  it("names the trace of a run whose ID is reused after its own file", async () => {
+    const request = { run_id: "test-server-6", input: { vendor_ids: ["V-1003"] } };
+    const first = (await post(request)).body;
+    const again = (await post(request)).body;
+
+    expect(again.run_id).toBe("test-server-6");
+    expect(again.log_file).not.toBe(first.log_file);
+    expect(again.trace_id).toBe(basename(again.log_file as string, ".jsonl"));
+  });
+
   it.each(readdirSync("input_examples"))(
     "replays %s in sample mode with the decisions of its live output",
     async (example) => {
@@ -142,6 +157,43 @@ describe("POST /run", () => {
       status: 400,
       body: inputError("The request body is over 64 KB"),
     });
+  });
+
+  it("refuses an oversized body without waiting for the rest of it, and closes the connection", async () => {
+    const { hostname, port } = new URL(await sampleServer);
+    const request = httpRequest({ hostname, port, path: "/run", method: "POST" });
+    request.on("error", () => undefined);
+    const response = new Promise<IncomingMessage>((resolve) => request.once("response", resolve));
+    request.write("x".repeat(64 * 1024 + 1));
+
+    const { statusCode, headers } = await response;
+    request.destroy();
+
+    expect({ statusCode, connection: headers.connection }).toEqual({ statusCode: 400, connection: "close" });
+  });
+
+  it("asks for the bearer token when API_TOKEN is set", async () => {
+    const guarded = start(true, "s3cret");
+    const unauthorized = {
+      status: 401,
+      body: {
+        status: "error",
+        error: {
+          type: "unauthorized",
+          message: "POST /run needs the header Authorization: Bearer <API_TOKEN>",
+          recoverable: false,
+        },
+      },
+    };
+    const request = { input: { vendor_ids: ["V-1003"] } };
+
+    expect(await post(request, { server: guarded })).toEqual(unauthorized);
+    for (const authorization of ["Bearer s3crex", "Bearer s3cret2", "s3cret"]) {
+      expect(await post(request, { server: guarded, headers: { authorization } })).toEqual(unauthorized);
+    }
+    expect(
+      (await post(request, { server: guarded, headers: { authorization: "Bearer s3cret" } })).status,
+    ).toBe(200);
   });
 
   it.each([
@@ -207,8 +259,8 @@ describe("POST /run", () => {
     expect(vi.mocked(verify).mock.lastCall?.slice(2)).toEqual([
       ["V-1003"],
       [
-        { vendorId: "input-1", name: "Acme", country: "GB", lei: null, cik: null, sic: null },
-        { vendorId: "input-2", name: "Acme Ltd", country: "GB", lei: null, cik: "123", sic: null },
+        { vendorId: "input:1", name: "Acme", country: "GB", lei: null, cik: null, sic: null },
+        { vendorId: "input:2", name: "Acme Ltd", country: "GB", lei: null, cik: "123", sic: null },
       ],
     ]);
   });
@@ -225,7 +277,7 @@ describe("POST /run", () => {
         suppliers: [
           { vendorId: "V-1003", decision: "ready" },
           {
-            vendorId: "input-1",
+            vendorId: "input:1",
             error:
               "input error: Sample mode replays the recorded demo suppliers only, and this request was not recorded",
           },

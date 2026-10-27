@@ -88,6 +88,11 @@ export function sampleMode(source: Source = loadEnv()): boolean {
   return source.SAMPLE_MODE?.trim().toLowerCase() === "true";
 }
 
+// Set, POST /run requires it as a bearer token; unset, the API is open, as for a judge on their own machine.
+export function apiToken(source: Source = loadEnv()): string | null {
+  return source.API_TOKEN?.trim() || null;
+}
+
 export function port(source: Source = loadEnv()): number {
   const value = Number(source.PORT?.trim() || "8000");
   if (!Number.isInteger(value) || value < 1 || value > 65535) {

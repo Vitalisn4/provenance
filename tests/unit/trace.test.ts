@@ -54,13 +54,17 @@ describe("Trace", () => {
     expect(newRunId(new Date("2026-10-27T15:30:12Z"))).toMatch(/^run-20261027153012-[0-9a-f]{8}$/);
   });
 
-  it("replaces an earlier run's trace when a run ID is reused", () => {
+  it("gives each run its own file, keeping an earlier run's trace when a run ID is reused", () => {
     const dir = mkdtempSync(join(tmpdir(), "trace-"));
     const out = { write: () => true };
-    openTrace("example-1", { secrets: [], out, dir }).log({ agent: "Pipeline", action: "first", output: "" });
+    const first = openTrace("example-1", { secrets: [], out, dir });
+    first.log({ agent: "Pipeline", action: "first", output: "" });
     const again = openTrace("example-1", { secrets: [], out, dir });
 
-    expect(again).toMatchObject({ runId: "example-1", file: `${dir}/trace-example-1.jsonl` });
+    expect(first.file).toBe(`${dir}/trace-example-1.jsonl`);
+    expect(again.runId).toBe("example-1");
+    expect(again.file).toMatch(new RegExp(`^${dir}/trace-example-1-[0-9a-f]{8}\\.jsonl$`));
+    expect(readFileSync(first.file, "utf8")).toContain('"action":"first"');
     expect(readFileSync(again.file, "utf8")).toBe("");
   });
 

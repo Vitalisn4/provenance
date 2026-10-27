@@ -145,17 +145,17 @@ describe("Scout", () => {
     const { zetaris, execute, evidenceSql } = fakeZetaris({ erp: [["V-1", null, null]] });
     const name = `O'Brien "Ltd" \\ ; DROP TABLE x`;
     const { vendorIds, gather } = await openScout(zetaris, userAgent, [
-      { vendorId: "input-1", name, country: "IE", lei, cik: null, sic: null },
+      { vendorId: "input:1", name, country: "IE", lei, cik: null, sic: null },
     ]);
     expect(vendorIds).toEqual(["V-1"]);
 
-    const evidence = await gather("input-1");
+    const evidence = await gather("input:1");
     const sql = evidenceSql();
     const decoded = [...sql.matchAll(/CAST\(unbase64\('([\w+/=]+)'\) AS STRING\) AS (\w+)/g)].map(
       ([, encoded = "", column]) => [column, Buffer.from(encoded, "base64").toString()],
     );
     expect(decoded).toEqual([
-      ["vendor_id", "input-1"],
+      ["vendor_id", "input:1"],
       ["vendor_name", name],
       ["country", "IE"],
       ["claimed_lei", lei],
