@@ -1,0 +1,121 @@
+{
+  "run_id": "example-2",
+  "status": "success",
+  "output": {
+    "sample_mode": false,
+    "summary": "Suppliers verified: 3 (3 escalate)",
+    "recommendations": [
+      "V-1001: correct lei to \"VGRQXHF3J8VDLUA7XE92\" from GLEIF",
+      "V-1001: escalate: the sources disagree on sic",
+      "V-1015: escalate: the LEI registration status is LAPSED",
+      "V-1031: escalate: the supplier matches more than one legal entity"
+    ],
+    "suppliers": [
+      {
+        "vendorId": "V-1001",
+        "decision": "escalate",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "unverified"
+          },
+          {
+            "field": "sic",
+            "status": "conflicting"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "correct",
+            "field": "lei",
+            "value": "VGRQXHF3J8VDLUA7XE92",
+            "source": "GLEIF"
+          },
+          {
+            "kind": "escalate",
+            "reason": "the sources disagree on sic"
+          }
+        ],
+        "reasons": {
+          "name": "ERP value 'International Business Machines Corp' uses an allowed legal-form abbreviation (Corp = Corporation) matching the accepted name 'INTERNATIONAL BUSINESS MACHINES CORPORATION', and both GLEIF and EDGAR confirm the same entity.",
+          "lei": "GLEIF provides LEI 'VGRQXHF3J8VDLUA7XE92' which exactly matches the accepted LEI.",
+          "sic": "ERP and EDGAR both list SIC 3570 matching the accepted code, while company_dns indicates no entry for 3570, confirming the code is not in that industry list."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1015",
+        "decision": "escalate",
+        "facts": [
+          {
+            "field": "name",
+            "status": "confirmed"
+          },
+          {
+            "field": "lei",
+            "status": "confirmed"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "escalate",
+            "reason": "the LEI registration status is LAPSED"
+          }
+        ],
+        "reasons": {
+          "name": "Both ERP and GLEIF provide the exact legal name 'Mitsubishi Caterpillar Forklift America Inc.' which matches the accepted value.",
+          "lei": "Both ERP and GLEIF provide the LEI '549300QFGGPU2T3O6Y49' which exactly matches the accepted value."
+        },
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      {
+        "vendorId": "V-1031",
+        "decision": "escalate",
+        "facts": [],
+        "actions": [
+          {
+            "kind": "escalate",
+            "reason": "the supplier matches more than one legal entity"
+          }
+        ],
+        "reasons": {},
+        "model": null
+      }
+    ],
+    "evaluation": {
+      "learning": {
+        "correct": 1,
+        "total": 1
+      },
+      "held_out": {
+        "correct": 2,
+        "total": 2
+      }
+    }
+  },
+  "agents": [
+    {
+      "name": "Scout",
+      "role": "Registers the GLEIF and SEC EDGAR records a supplier's identifiers name as Zetaris REST tables, then reads the ERP row and those records in one Zetaris query"
+    },
+    {
+      "name": "Resolver",
+      "role": "Finds the supplier's legal entity: the one its LEI names, or else the best match from a GLEIF search through Zetaris, scored with the Meterless World Model"
+    },
+    {
+      "name": "Judge",
+      "role": "Asks NVIDIA Nemotron through Meterless Nightshift which registry values state the ERP's facts"
+    },
+    {
+      "name": "Decision",
+      "role": "Turns the verdicts into ready, fix or escalate under a fixed policy"
+    }
+  ],
+  "trace_id": "trace-example-2",
+  "log_file": "logs/trace-example-2.jsonl",
+  "execution_time_seconds": 42.315
+}
