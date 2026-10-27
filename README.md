@@ -7,7 +7,8 @@
 > **Sponsor technology:** Zetaris (data layer), Meterless World Model and H-MEM engines, Meterless Nightshift
 > (only AI provider), NVIDIA Nemotron 3 Ultra, built in Cursor.
 >
-> **Demo video (3:42):** <VIDEO_LINK> · **Slides:** [docs/Provenance-deck.pdf](docs/Provenance-deck.pdf)
+> **Demo video (3:42):** <https://youtu.be/Q8WehL0p6-c> · **Slides:**
+> [docs/Provenance-deck.pdf](docs/Provenance-deck.pdf)
 >
 > **Run it with only Docker installed:** `docker build -t provenance .` then
 > `docker run --rm -p 8000:8000 -p 8001:8001 -e SAMPLE_MODE=true provenance`, then open
